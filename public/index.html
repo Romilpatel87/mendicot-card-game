@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Mendicot · Dehla Pakad</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <div class="grain"></div>
+
+  <!-- HOME ----------------------------------------------------------------->
+  <section id="home" class="screen active">
+    <div class="home-card">
+      <div class="crest">♠ ♥ ♦ ♣</div>
+      <h1>Mendicot</h1>
+      <p class="subtitle">Dehla&nbsp;Pakad · catch the tens</p>
+
+      <label class="field">
+        <span>Your name</span>
+        <input id="nameInput" maxlength="20" placeholder="e.g. Aanya" autocomplete="off" />
+      </label>
+
+      <div class="field">
+        <span>Players</span>
+        <div class="mode-toggle" id="modeToggle">
+          <button type="button" class="mode-opt active" data-players="4">4 players<small>2 v 2</small></button>
+          <button type="button" class="mode-opt" data-players="6">6 players<small>3 v 3</small></button>
+          <button type="button" class="mode-opt" data-players="8">8 players<small>4 v 4 · 2 decks</small></button>
+        </div>
+      </div>
+
+      <div class="field" id="deckField" hidden>
+        <span>Deck</span>
+        <div class="mode-toggle" id="deckToggle">
+          <button type="button" class="mode-opt active" data-decks="1">Single deck<small>48 cards · 8 tricks</small></button>
+          <button type="button" class="mode-opt" data-decks="2">Double deck<small>72 cards · 12 tricks</small></button>
+        </div>
+      </div>
+
+      <button id="createBtn" class="btn primary">Create a table</button>
+
+      <div class="divider"><span>or join one</span></div>
+
+      <div class="join-row">
+        <input id="codeInput" maxlength="4" placeholder="CODE" autocomplete="off" />
+        <button id="joinBtn" class="btn">Join</button>
+      </div>
+      <p id="homeError" class="error"></p>
+      <p class="rules-link"><a id="rulesToggle">How to play ▾</a></p>
+      <div id="rulesBox" class="rules-box"></div>
+    </div>
+  </section>
+
+  <!-- LOBBY ---------------------------------------------------------------->
+  <section id="lobby" class="screen">
+    <div class="lobby-card">
+      <h2>Table ready?</h2>
+      <p class="lobby-hint">Share this code so friends can join. Empty seats can be filled with bots.</p>
+      <div class="code-chip" id="lobbyCode" title="Tap to copy">CODE</div>
+      <div class="seats" id="lobbySeats"></div>
+      <div class="lobby-actions">
+        <button id="startBtn" class="btn primary" disabled>Deal the cards</button>
+        <button id="leaveLobbyBtn" class="btn ghost">Leave</button>
+      </div>
+      <p class="team-note" id="teamNote">Alternate seats are partners · <span class="t-us">Your team</span> vs <span class="t-them">Opponents</span></p>
+    </div>
+  </section>
+
+  <!-- TABLE ---------------------------------------------------------------->
+  <section id="table" class="screen">
+    <header class="topbar">
+      <div class="brand">Mendicot</div>
+      <div class="match" id="matchStrip"></div>
+      <button id="leaveGameBtn" class="btn ghost small">Leave</button>
+    </header>
+
+    <div class="felt">
+      <div class="seats-layer" id="seatsLayer"></div>
+
+      <div class="center">
+        <div class="trick" id="trickArea"></div>
+        <div class="center-info">
+          <div class="trump-badge" id="trumpBadge"></div>
+          <div class="status-line" id="statusLine"></div>
+        </div>
+      </div>
+
+      <aside class="scoreboard" id="scoreboard"></aside>
+    </div>
+
+    <div class="handbar">
+      <div class="hand" id="handArea"></div>
+      <button id="playBtn" class="btn primary play-btn" disabled>Play card</button>
+    </div>
+  </section>
+
+  <!-- RESULT OVERLAY ------------------------------------------------------->
+  <div id="overlay" class="overlay">
+    <div class="overlay-card">
+      <div class="result-crest" id="resultCrest">♛</div>
+      <h2 id="resultTitle"></h2>
+      <p id="resultDetail"></p>
+      <div id="resultStats" class="result-stats"></div>
+      <button id="rematchBtn" class="btn primary">Play again</button>
+      <p id="rematchWait" class="rematch-wait"></p>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/client.js"></script>
+</body>
+</html>
