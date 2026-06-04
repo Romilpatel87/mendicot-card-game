@@ -166,10 +166,12 @@ function startDeal(room) {
 
 io.on('connection', (socket) => {
   socket.on('createRoom', ({ name, players, decks }, ack) => {
+    const nm = (name || '').trim();
+    if (!nm) return ack && ack({ ok: false, error: 'Please enter your name.' });
     const room = newRoom([4, 6, 8].includes(players) ? players : 4, decks === 2 ? 2 : 1);
     const tk = token();
     room.seats[0] = {
-      token: tk, name: (name || 'Player').slice(0, 20), isBot: false,
+      token: tk, name: nm.slice(0, 20), isBot: false,
       socketId: socket.id, connected: true, creator: true,
     };
     socket.join(room.code);
@@ -191,11 +193,13 @@ io.on('connection', (socket) => {
       s.connected = true;
       if (name) s.name = name.slice(0, 20);
     } else {
+      const nm = (name || '').trim();
+      if (!nm) return ack && ack({ ok: false, error: 'Please enter your name.' });
       seat = room.seats.findIndex((x) => x === null);
       if (seat < 0) return ack && ack({ ok: false, error: 'Room is full.' });
       tk = token();
       room.seats[seat] = {
-        token: tk, name: (name || 'Player').slice(0, 20), isBot: false,
+        token: tk, name: nm.slice(0, 20), isBot: false,
         socketId: socket.id, connected: true, creator: false,
       };
     }

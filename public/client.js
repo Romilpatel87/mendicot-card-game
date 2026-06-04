@@ -70,7 +70,8 @@
   const decksForCreate = () => (chosenPlayers === 8 ? 2 : chosenPlayers === 6 ? chosenDecks : 1);
 
   $('createBtn').onclick = () => {
-    const name = $('nameInput').value.trim() || 'Player';
+    const name = requireName();
+    if (!name) return;
     me.name = name;
     socket.emit('createRoom', { name, players: chosenPlayers, decks: decksForCreate() }, (res) => {
       if (!res || !res.ok) return setHomeError(res && res.error);
@@ -82,7 +83,8 @@
   $('joinBtn').onclick = () => doJoin();
   $('codeInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') doJoin(); });
   function doJoin() {
-    const name = $('nameInput').value.trim() || 'Player';
+    const name = requireName();
+    if (!name) return;
     const code = $('codeInput').value.trim().toUpperCase();
     if (!code) return setHomeError('Enter a room code.');
     me.name = name;
@@ -94,6 +96,25 @@
   }
   const setHomeError = (msg) => { $('homeError').textContent = msg || 'Something went wrong.'; };
 
+  // A real player must enter a name before creating or joining. Returns the trimmed
+  // name, or '' (and flags the field in red) if it's empty.
+  function requireName() {
+    const name = $('nameInput').value.trim();
+    if (!name) {
+      setHomeError('Please enter your name to play.');
+      $('nameInput').classList.add('invalid');
+      $('nameInput').focus();
+      return '';
+    }
+    $('nameInput').classList.remove('invalid');
+    return name;
+  }
+  // Clear the red flag as soon as they start typing a name.
+  $('nameInput').addEventListener('input', () => {
+    $('nameInput').classList.remove('invalid');
+    if ($('homeError').textContent === 'Please enter your name to play.') $('homeError').textContent = '';
+  });
+
   $('rulesToggle').onclick = () => $('rulesBox').classList.toggle('open');
   $('rulesBox').innerHTML = `
     <h4>The goal</h4>
@@ -102,9 +123,14 @@
     <ul>
       <li>The leader plays any card; its suit is the suit for that trick.</li>
       <li>Everyone must follow that suit if they can.</li>
-      <li>Can't follow? Play anything. The first such off-suit card of the game sets the <b>trump</b> suit.</li>
+      <li>Can't follow? Play any card — that's how the <b>trump</b> gets decided (below).</li>
       <li>Highest trump wins; with no trump in the trick, the highest card of the led suit wins.</li>
     </ul>
+    <h4>Choosing the trump</h4>
+    <p>The <b>first trick</b> where someone can't follow the led suit decides the trump.
+    Each player in that trick who can't follow may play any suit, and each one <b>overrides</b>
+    the previous choice — so the <b>last</b> player who can't follow sets the trump.
+    Once that trick ends, the trump is <b>fixed for the rest of the game</b>.</p>
     <h4>Winning</h4>
     <ul>
       <li>Take <b>all</b> the mendis → win the <b>cot</b>. Take a majority → win the deal.</li>

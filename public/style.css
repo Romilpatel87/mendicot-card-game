@@ -69,6 +69,7 @@ input {
 }
 input:focus { border-color: var(--gold); }
 input::placeholder { color: rgba(244,236,216,0.4); }
+input.invalid, input.invalid:focus { border-color: #ff6b5e; box-shadow: 0 0 0 1px #ff6b5e; }
 
 /* ---- home ---- */
 .home-card, .lobby-card {
@@ -81,6 +82,7 @@ input::placeholder { color: rgba(244,236,216,0.4); }
 .home-card h1 { font-size: 52px; color: var(--cream); line-height: 1; }
 .subtitle { color: var(--gold-dim); font-size: 13px; letter-spacing: 0.25em; text-transform: uppercase; margin: 8px 0 26px; }
 .field { display: block; text-align: left; margin-bottom: 18px; }
+.field[hidden] { display: none; } /* `.field{display:block}` would otherwise beat the [hidden] attribute */
 .field span { display: block; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold-dim); margin-bottom: 6px; }
 .mode-toggle { display: flex; gap: 10px; }
 .mode-opt {
