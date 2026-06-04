@@ -13,6 +13,11 @@
 // Clubs, the second one takes the trick. Because trickWinner walks the trick in
 // play order and `beats` breaks ties in favour of the challenger, this falls out
 // naturally (see `beats`).
+//
+// Trump rule: trump is broken the first time a player can't follow the lead suit.
+// Within that ESTABLISHING trick every void player's off-suit card overrides the
+// trump, so the last void player decides it; once that trick ends the trump LOCKS
+// and never changes for the rest of the deal (see `trumpLocked`).
 
 const SUITS = ['S', 'H', 'D', 'C']; // Spades, Hearts, Diamonds, Clubs
 const RANKS = [
@@ -98,6 +103,7 @@ function createGame(rng = Math.random, numPlayers = 4, decks) {
     dealer,
     hands,
     trump: null,
+    trumpLocked: false,   // once the establishing trick ends, the trump can't change
     leader,
     turn: leader,
     leadSuit: null,
@@ -181,8 +187,9 @@ function playCard(state, seat, id) {
   if (state.currentTrick.length === 0) {
     state.leadSuit = card.suit;
     state.leader = seat;
-  } else if (state.trump === null && card.suit !== state.leadSuit) {
-    // First off-suit discard of the game sets the trump.
+  } else if (!state.trumpLocked && card.suit !== state.leadSuit) {
+    // Until the trump locks, each off-suit discard (re)sets it — so the LAST void
+    // player in the establishing trick decides the final trump.
     state.trump = card.suit;
     events.trumpSet = card.suit;
   }
@@ -212,6 +219,10 @@ function playCard(state, seat, id) {
   state.trickNumber += 1;
 
   events.trickWon = { winner, winTeam, capturedMendis };
+
+  // The trump locks at the end of the trick in which it was first established;
+  // from here on, void players can no longer change it.
+  if (state.trump !== null) state.trumpLocked = true;
 
   state.currentTrick = [];
   state.leadSuit = null;

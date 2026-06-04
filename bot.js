@@ -90,13 +90,21 @@ function chooseCard(state, seat) {
     return lowest(non10(legal).length ? non10(legal) : legal);
   }
 
-  // --- Void in the lead suit: ruff, set trump, or discard ------------------
+  // --- Void in the lead suit: ruff, set/override trump, or discard ----------
+  // While the trump is still unlocked (the establishing trick), ANY off-suit card we
+  // play changes the trump. If our partner is already ahead, keep the current trump
+  // by following it low rather than accidentally overriding (and stealing) the trick.
+  if (partnerWinning && !mendiOnTable && trump && !state.trumpLocked) {
+    const keepLow = legal.filter((c) => c.suit === trump && !beats(c, bestCard, state.leadSuit, trump));
+    if (keepLow.length) return lowest(keepLow);
+  }
+
   if (partnerSecure) {
     // Partner has it locked — sluff our lowest junk, never a ten or a high card.
     return lowest(non10(legal).length ? non10(legal) : legal);
   }
 
-  if (trump) {
+  if (trump && state.trumpLocked) {
     const myTrumps = legal.filter((c) => c.suit === trump);
     const winningTrumps = myTrumps.filter((c) => beats(c, bestCard, state.leadSuit, trump));
     // Ruff in (or over-ruff) when a ten is on the table or an opponent leads — use
@@ -111,10 +119,10 @@ function chooseCard(state, seat) {
     return lowest(non10(legal).length ? non10(legal) : legal);
   }
 
-  // No trump set yet, and we're void: an off-suit card now SETS the trump and
-  // (absent any other trump) wins the trick. Worth doing when a ten is at stake or
-  // an opponent leads — set it in our longest suit for future control, keeping that
-  // suit's ten back.
+  // Trump not locked yet (or none at all): an off-suit card now SETS or OVERRIDES the
+  // trump and, as the most recent trump, usually wins the trick. Worth doing when a
+  // ten is at stake or an opponent leads — set it in our longest suit for future
+  // control, keeping that suit's ten back.
   if (mendiOnTable || !partnerWinning) {
     const bySuit = {};
     for (const c of legal) (bySuit[c.suit] ||= []).push(c);

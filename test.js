@@ -112,21 +112,41 @@ fuzz(8, 2, 200000, 3000);
   check(G.beats(tLo, tHi, 'S', 'H') === false, 'lower trump loses');
 }
 
-// 5) Targeted: trump gets set by first off-suit discard, and only once.
+// 5) Targeted: trump may shift during the establishing trick, then locks for good.
 {
   const rng = mulberry32(42);
   const state = G.createGame(rng);
-  // Force a scenario: give seat0 a controlled lead, etc. Instead just play randomly
-  // until first off-suit occurs and confirm trump is non-null afterward and stable.
-  let trumpSeen = null;
+  let locked = null;
   while (state.phase === 'playing') {
-    const before = state.trump;
     const legal = G.legalMoves(state, state.turn);
-    const pick = legal[0];
-    G.playCard(state, state.turn, pick.id);
-    if (before === null && state.trump !== null) trumpSeen = state.trump;
-    if (trumpSeen) check(state.trump === trumpSeen, 'trump stable once set');
+    G.playCard(state, state.turn, legal[0].uid);
+    if (state.trumpLocked) {
+      if (locked === null) locked = state.trump;
+      check(state.trump === locked, 'trump never changes once locked');
+    } else {
+      check(!locked, 'trump does not lock and then unlock');
+    }
   }
+  check(state.trump === null || state.trumpLocked, 'a trump that was set ends up locked');
+}
+
+// 5b) Targeted: within the establishing trick the LAST void player sets the trump
+//     and wins; the trump then locks.
+{
+  const c = (label, suit, value) => ({ label, suit, value, id: label + suit, uid: label + suit });
+  const state = {
+    phase: 'playing', numPlayers: 4, decks: 1, tricksPerHand: 13,
+    trump: null, trumpLocked: false, leadSuit: null, leader: 0, turn: 0,
+    currentTrick: [], trickNumber: 0, tricksWon: [0, 0], mendis: { 0: [], 1: [] },
+    history: [], lastTrick: null, result: null,
+    hands: [[c('A', 'C', 14)], [c('K', 'H', 13)], [c('Q', 'S', 12)], [c('9', 'D', 9)]],
+  };
+  G.playCard(state, 0, 'AC'); check(state.leadSuit === 'C', 'clubs led');
+  G.playCard(state, 1, 'KH'); check(state.trump === 'H', 'first void sets trump = hearts');
+  G.playCard(state, 2, 'QS'); check(state.trump === 'S', 'second void overrides to spades');
+  G.playCard(state, 3, '9D'); check(state.trump === 'D', 'last void overrides to diamonds');
+  check(state.lastTrick && state.lastTrick.winner === 3, 'last void player wins the trick');
+  check(state.trumpLocked === true, 'trump locks at the end of the establishing trick');
 }
 
 // 6) Targeted: 6-player teams alternate and split 3/3.
