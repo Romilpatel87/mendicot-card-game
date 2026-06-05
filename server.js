@@ -130,15 +130,23 @@ function scheduleBots(room) {
 
   room.botTimer = setTimeout(() => {
     room.botTimer = null;
-    const s = room.state;
-    if (!s || s.phase !== 'playing') return;
-    const c = room.seats[s.turn];
-    if (!c || !c.isBot) return;
-    const card = chooseCard(s, s.turn);
-    G.playCard(s, s.turn, card.uid);
-    broadcastGame(room);
-    if (s.phase === 'finished') return finishDeal(room);
-    scheduleBots(room);
+    // This runs detached from any request, so an uncaught throw here would crash the
+    // whole server (kicking every room). Keep it fully guarded.
+    try {
+      const s = room.state;
+      if (!s || s.phase !== 'playing') return;
+      const c = room.seats[s.turn];
+      if (!c || !c.isBot) return;
+      const card = chooseCard(s, s.turn);
+      if (!card) return; // nothing legal to play — bail rather than crash
+      const res = G.playCard(s, s.turn, card.uid);
+      if (!res || !res.ok) return; // illegal/duplicate — don't loop forever
+      broadcastGame(room);
+      if (s.phase === 'finished') return finishDeal(room);
+      scheduleBots(room);
+    } catch (e) {
+      console.error('[bot] error in room', room.code, e);
+    }
   }, BOT_DELAY_MS);
 }
 
@@ -165,7 +173,7 @@ function startDeal(room) {
 // ---- Socket handlers ------------------------------------------------------
 
 io.on('connection', (socket) => {
-  socket.on('createRoom', ({ name, players, decks }, ack) => {
+  socket.on('createRoom', ({ name, players, decks } = {}, ack) => {
     const nm = (name || '').trim();
     if (!nm) return ack && ack({ ok: false, error: 'Please enter your name.' });
     const room = newRoom([4, 6, 8].includes(players) ? players : 4, decks === 2 ? 2 : 1);
@@ -180,7 +188,7 @@ io.on('connection', (socket) => {
     broadcastLobby(room);
   });
 
-  socket.on('joinRoom', ({ code, name, token: tk }, ack) => {
+  socket.on('joinRoom', ({ code, name, token: tk } = {}, ack) => {
     code = (code || '').toUpperCase().trim();
     const room = rooms.get(code);
     if (!room) return ack && ack({ ok: false, error: 'Room not found.' });
@@ -225,7 +233,7 @@ io.on('connection', (socket) => {
     broadcastLobby(room);
   });
 
-  socket.on('removeBot', ({ seat }, ack) => {
+  socket.on('removeBot', ({ seat } = {}, ack) => {
     const ctx = socketIndex.get(socket.id);
     const room = ctx && rooms.get(ctx.code);
     if (!room || room.state) return ack && ack({ ok: false });
@@ -246,7 +254,7 @@ io.on('connection', (socket) => {
     startDeal(room);
   });
 
-  socket.on('playCard', ({ id }, ack) => {
+  socket.on('playCard', ({ id } = {}, ack) => {
     const ctx = socketIndex.get(socket.id);
     const room = ctx && rooms.get(ctx.code);
     if (!room || !room.state) return ack && ack({ ok: false, error: 'No active game.' });
@@ -313,6 +321,12 @@ setInterval(() => {
     }
   }
 }, 30 * 60 * 1000);
+
+// Last-resort safety net: a single bad event (a malformed message, a bot edge case)
+// should never take the whole server down and disconnect every room. Log it loudly
+// and keep serving. The stack trace shows up in the Render "Logs" tab for debugging.
+process.on('uncaughtException', (err) => console.error('[uncaughtException]', err));
+process.on('unhandledRejection', (err) => console.error('[unhandledRejection]', err));
 
 server.listen(PORT, () => {
   console.log(`Mendicot server running on http://localhost:${PORT}`);
