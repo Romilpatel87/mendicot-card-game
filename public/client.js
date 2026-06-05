@@ -11,6 +11,12 @@
   // completed-trick "beat" handling
   let viewLock = false, queuedView = null, shownTricks = -1;
 
+  // Keep free hosts (e.g. Render) awake while a game is on: they sleep after ~15 min
+  // without an inbound HTTP request, and WebSocket traffic doesn't count. A light HTTP
+  // ping every 4 min — only while we're in a room — prevents mid-game spin-down. When
+  // nobody is in a game it stops pinging, so the host can sleep and save free hours.
+  setInterval(() => { if (me.code) fetch('/healthz').catch(() => {}); }, 4 * 60 * 1000);
+
   const SUIT = { S: '♠', H: '♥', D: '♦', C: '♣' };
   const SUIT_NAME = { S: 'Spades', H: 'Hearts', D: 'Diamonds', C: 'Clubs' };
   const isRed = (s) => s === 'H' || s === 'D';

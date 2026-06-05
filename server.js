@@ -8,6 +8,10 @@ const G = require('./game');
 const { chooseCard } = require('./bot');
 
 const app = express();
+// Lightweight health/keep-alive endpoint. Free hosts (e.g. Render) sleep a service
+// after ~15 min with no inbound HTTP request — and WebSocket traffic does NOT count.
+// The client pings this while in a game so the server stays awake mid-session.
+app.get('/healthz', (_req, res) => res.status(200).send('ok'));
 app.use(express.static(path.join(__dirname, 'public')));
 const server = http.createServer(app);
 const io = new Server(server);
