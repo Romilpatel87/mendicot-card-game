@@ -111,6 +111,29 @@
     </div>
   </div>
 
+  <!-- SOUND SETTINGS SIDEBAR ---------------------------------------------->
+  <div id="soundBackdrop" class="side-backdrop"></div>
+  <aside id="soundPanel" class="side-panel" aria-label="Sound settings">
+    <div class="side-head">
+      <h3>Sound</h3>
+      <button id="soundClose" class="side-x" title="Close">✕</button>
+    </div>
+    <label class="snd-row">
+      <span>Sound effects</span>
+      <input type="checkbox" id="sndEnabled" />
+    </label>
+    <label class="snd-row col">
+      <span>Volume</span>
+      <input type="range" id="sndVolume" min="0" max="100" step="1" />
+    </label>
+    <div class="snd-section">Which sounds</div>
+    <label class="snd-row"><span>Mendi (10s)</span><input type="checkbox" id="sndMendi" /></label>
+    <label class="snd-row"><span>Cot (sweep)</span><input type="checkbox" id="sndCot" /></label>
+    <div class="snd-actions">
+      <button id="sndTest" class="btn small">▶ Test sound</button>
+    </div>
+  </aside>
+
   <script src="/socket.io/socket.io.js"></script>
   <script src="/client.js"></script>
 </body>

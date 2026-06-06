@@ -21,28 +21,55 @@
   const SUIT_NAME = { S: 'Spades', H: 'Hearts', D: 'Diamonds', C: 'Clubs' };
   const isRed = (s) => s === 'H' || s === 'D';
 
-  // ---- sound effects ----
+  // ---- sound effects + per-user settings sidebar ----
   // Drop MP3s in public/sounds/ named to match: sfx('mendi') → /sounds/mendi.mp3.
   // Files load lazily and missing files just stay silent (no errors). Browsers only
   // allow audio after a user gesture — fine here, since players click to create/play.
-  let muted = localStorage.getItem('mendicot.muted') === '1';
+  const SND_KEY = 'mendicot.sound';
+  const loadJSON = (k) => { try { return JSON.parse(localStorage.getItem(k)) || {}; } catch { return {}; } };
+  const sound = Object.assign({ enabled: true, volume: 0.7, mendi: true, cot: true }, loadJSON(SND_KEY));
+  const saveSound = () => localStorage.setItem(SND_KEY, JSON.stringify(sound));
   const SOUNDS = {};
-  function sfx(name) {
-    if (muted) return;
+  function audioFor(name) {
     let a = SOUNDS[name];
     if (!a) { a = SOUNDS[name] = new Audio('/sounds/' + name + '.mp3'); a.preload = 'auto'; }
+    a.volume = Math.max(0, Math.min(1, sound.volume));
+    return a;
+  }
+  function sfx(name) {
+    if (!sound.enabled || !sound[name]) return; // master off, or this sound disabled
+    const a = audioFor(name);
     try { a.currentTime = 0; a.play().catch(() => {}); } catch (e) {}
   }
+
+  // Sidebar wiring.
   const muteBtn = $('muteBtn');
-  function renderMute() { if (muteBtn) muteBtn.textContent = muted ? '🔇' : '🔊'; }
-  if (muteBtn) {
-    renderMute();
-    muteBtn.onclick = () => {
-      muted = !muted;
-      localStorage.setItem('mendicot.muted', muted ? '1' : '0');
-      renderMute();
-    };
-  }
+  const soundPanel = $('soundPanel');
+  const soundBackdrop = $('soundBackdrop');
+  const reflectSoundBtn = () => { if (muteBtn) muteBtn.textContent = sound.enabled ? '🔊' : '🔇'; };
+  const openSound = (open) => {
+    if (soundPanel) soundPanel.classList.toggle('open', open);
+    if (soundBackdrop) soundBackdrop.classList.toggle('open', open);
+  };
+  const syncSoundControls = () => {
+    if ($('sndEnabled')) $('sndEnabled').checked = sound.enabled;
+    if ($('sndVolume')) $('sndVolume').value = Math.round(sound.volume * 100);
+    if ($('sndMendi')) $('sndMendi').checked = sound.mendi;
+    if ($('sndCot')) $('sndCot').checked = sound.cot;
+    reflectSoundBtn();
+  };
+  if (muteBtn) muteBtn.onclick = () => { syncSoundControls(); openSound(true); };
+  if ($('soundClose')) $('soundClose').onclick = () => openSound(false);
+  if (soundBackdrop) soundBackdrop.onclick = () => openSound(false);
+  if ($('sndEnabled')) $('sndEnabled').onchange = (e) => { sound.enabled = e.target.checked; saveSound(); reflectSoundBtn(); };
+  if ($('sndVolume')) $('sndVolume').oninput = (e) => { sound.volume = (+e.target.value) / 100; saveSound(); };
+  if ($('sndMendi')) $('sndMendi').onchange = (e) => { sound.mendi = e.target.checked; saveSound(); };
+  if ($('sndCot')) $('sndCot').onchange = (e) => { sound.cot = e.target.checked; saveSound(); };
+  if ($('sndTest')) $('sndTest').onclick = () => { // preview at current volume (ignores the on/off gates)
+    const a = audioFor('mendi');
+    try { a.currentTime = 0; a.play().catch(() => {}); } catch (e) {}
+  };
+  syncSoundControls();
 
   // ---- session persistence (for reconnects / refresh) ----
   const SKEY = 'mendicot.session';
