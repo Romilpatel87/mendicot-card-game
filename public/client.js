@@ -21,6 +21,29 @@
   const SUIT_NAME = { S: 'Spades', H: 'Hearts', D: 'Diamonds', C: 'Clubs' };
   const isRed = (s) => s === 'H' || s === 'D';
 
+  // ---- sound effects ----
+  // Drop MP3s in public/sounds/ named to match: sfx('mendi') → /sounds/mendi.mp3.
+  // Files load lazily and missing files just stay silent (no errors). Browsers only
+  // allow audio after a user gesture — fine here, since players click to create/play.
+  let muted = localStorage.getItem('mendicot.muted') === '1';
+  const SOUNDS = {};
+  function sfx(name) {
+    if (muted) return;
+    let a = SOUNDS[name];
+    if (!a) { a = SOUNDS[name] = new Audio('/sounds/' + name + '.mp3'); a.preload = 'auto'; }
+    try { a.currentTime = 0; a.play().catch(() => {}); } catch (e) {}
+  }
+  const muteBtn = $('muteBtn');
+  function renderMute() { if (muteBtn) muteBtn.textContent = muted ? '🔇' : '🔊'; }
+  if (muteBtn) {
+    renderMute();
+    muteBtn.onclick = () => {
+      muted = !muted;
+      localStorage.setItem('mendicot.muted', muted ? '1' : '0');
+      renderMute();
+    };
+  }
+
   // ---- session persistence (for reconnects / refresh) ----
   const SKEY = 'mendicot.session';
   const saveSession = () => localStorage.setItem(SKEY, JSON.stringify({ code: me.code, token: me.token, name: me.name }));
@@ -359,6 +382,8 @@
     const r = v.result;
     const usTeam = me.seat % 2;
     const won = r.winningTeam === usTeam;
+    // Cot fanfare — only the first time the overlay opens for this result.
+    if (r.cot && !$('overlay').classList.contains('show')) sfx('cot');
     $('overlay').classList.add('show');
     const title = $('resultTitle');
     if (r.draw) {
@@ -397,6 +422,7 @@
     const justCompleted = v.lastTrick && v.trickNumber > shownTricks && v.currentTrick.length === 0;
     if (justCompleted) {
       shownTricks = v.trickNumber;
+      if (v.lastTrick && v.lastTrick.capturedMendis && v.lastTrick.capturedMendis.length) sfx('mendi');
       renderTable(v, v.lastTrick);     // hold on the finished trick
       viewLock = true;
       setTimeout(() => {
