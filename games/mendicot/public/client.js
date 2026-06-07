@@ -250,7 +250,7 @@
   $('startBtn').onclick = () => socket.emit('startGame', {}, (res) => { if (res && !res.ok) alert(res.error); });
   $('leaveLobbyBtn').onclick = leaveRoom;
   $('leaveGameBtn').onclick = leaveRoom;
-  function leaveRoom() { clearSession(); location.reload(); }
+  function leaveRoom() { clearSession(); location.href = '/'; }
 
   // ======================================================================
   //  TABLE

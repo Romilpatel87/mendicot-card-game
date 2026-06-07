@@ -1,0 +1,102 @@
+/* landing.css — Taash Ghar game-select landing. Festive Indian palette:
+   deep maroon + saffron + gold, with a faint mandala behind the title. */
+:root {
+  --gold: #e8b75a;
+  --gold-deep: #c9902f;
+  --cream: #fdf3dd;
+  --saffron: #ff9d3c;
+  --teal: #129b84;
+  --red: #ff7a6b;
+  --ink: #2a1402;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { min-height: 100%; }
+body {
+  font-family: 'Mukta', system-ui, sans-serif;
+  color: var(--cream);
+  background: radial-gradient(125% 95% at 50% -10%, #6a1322 0%, #3d0a12 46%, #1f0610 100%);
+  min-height: 100vh;
+  display: flex; flex-direction: column; align-items: center;
+  position: relative; overflow-x: hidden;
+}
+
+/* faint concentric mandala behind the title */
+.mandala {
+  position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: 0.12;
+  background:
+    repeating-radial-gradient(circle at 50% 34%, transparent 0 36px, var(--gold) 36px 37px),
+    repeating-conic-gradient(from 0deg at 50% 34%, var(--gold) 0 2deg, transparent 2deg 14deg);
+  -webkit-mask: radial-gradient(circle at 50% 34%, #000 0 30%, transparent 52%);
+          mask: radial-gradient(circle at 50% 34%, #000 0 30%, transparent 52%);
+}
+
+/* ---- header ---- */
+.landing-head { text-align: center; margin-top: 8vh; padding: 0 20px; position: relative; z-index: 1; }
+.diyas { color: var(--saffron); letter-spacing: 0.35em; font-size: 20px; opacity: 0.92; margin-bottom: 10px; }
+.landing-head h1 {
+  font-family: 'Rozha One', serif; color: var(--gold);
+  font-size: clamp(46px, 9vw, 88px); line-height: 1;
+  text-shadow: 0 2px 0 rgba(0,0,0,0.35), 0 0 28px rgba(232,183,90,0.25);
+}
+.landing-head .sub {
+  margin-top: 12px; color: var(--saffron);
+  letter-spacing: 0.24em; text-transform: uppercase; font-size: 13px;
+}
+
+/* ---- game grid ---- */
+.games {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 320px));
+  gap: 26px; justify-content: center;
+  padding: 7vh 22px 40px; width: 100%; max-width: 920px;
+  position: relative; z-index: 1;
+}
+.game-card {
+  position: relative; border-radius: 20px; padding: 30px 24px 26px; text-align: center;
+  background: linear-gradient(170deg, rgba(255,255,255,0.08), rgba(0,0,0,0.20));
+  border: 1.5px solid rgba(232,183,90,0.5);
+  box-shadow: 0 18px 40px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(232,183,90,0.12);
+  transition: transform 0.18s ease, box-shadow 0.2s ease;
+  overflow: hidden; text-decoration: none; color: inherit;
+  display: flex; flex-direction: column; align-items: center;
+}
+.game-card.playable { cursor: pointer; }
+.game-card.playable:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 28px 56px rgba(0,0,0,0.55), 0 0 0 1px var(--gold), inset 0 0 0 1px rgba(232,183,90,0.2);
+}
+.game-card .suits { font-size: 30px; letter-spacing: 0.14em; color: var(--gold); display: flex; gap: 6px; }
+.game-card .suits .red { color: var(--red); }
+.game-card .suits .three { font-family: 'Rozha One', serif; color: var(--cream); }
+.game-card h2 { font-family: 'Rozha One', serif; font-size: 30px; color: var(--cream); margin: 14px 0 4px; }
+.game-card .tag { color: var(--saffron); font-size: 13px; letter-spacing: 0.03em; }
+.game-card .desc { color: rgba(253,243,221,0.74); font-size: 13.5px; line-height: 1.55; margin: 14px 0 22px; }
+.game-card .play {
+  margin-top: auto; font-family: 'Mukta', sans-serif; font-weight: 700; font-size: 15px;
+  color: var(--ink); padding: 11px 26px; border-radius: 999px;
+  background: linear-gradient(180deg, var(--gold), var(--gold-deep));
+  box-shadow: 0 8px 22px rgba(232,183,90,0.3);
+}
+.game-card .play.soon-btn {
+  background: rgba(255,255,255,0.06); color: rgba(253,243,221,0.6);
+  border: 1px solid rgba(232,183,90,0.3); box-shadow: none; font-weight: 600;
+}
+.game-card.soon { opacity: 0.9; }
+.badge-soon {
+  position: absolute; top: 16px; right: -38px; transform: rotate(45deg);
+  background: linear-gradient(180deg, var(--teal), #0c7d6b); color: #eafff7;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
+  padding: 5px 44px; box-shadow: 0 2px 8px rgba(0,0,0,0.45);
+}
+
+/* ---- footer ---- */
+.landing-foot {
+  margin-top: auto; padding: 26px; text-align: center;
+  color: rgba(253,243,221,0.5); font-size: 12px; letter-spacing: 0.04em;
+  position: relative; z-index: 1;
+}
+
+@media (max-width: 560px) {
+  .landing-head { margin-top: 6vh; }
+  .games { padding-top: 5vh; }
+}

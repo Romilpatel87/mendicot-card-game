@@ -4,15 +4,23 @@ const path = require('path');
 const http = require('http');
 const express = require('express');
 const { Server } = require('socket.io');
-const G = require('./game');
-const { chooseCard } = require('./bot');
+const G = require('./games/mendicot/game');
+const { chooseCard } = require('./games/mendicot/bot');
 
 const app = express();
 // Lightweight health/keep-alive endpoint. Free hosts (e.g. Render) sleep a service
 // after ~15 min with no inbound HTTP request — and WebSocket traffic does NOT count.
 // The client pings this while in a game so the server stays awake mid-session.
 app.get('/healthz', (_req, res) => res.status(200).send('ok'));
+
+// Shared site assets (landing page, sounds) live in /public, served at "/".
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Each game's UI lives in games/<game>/public and is mounted under /<game>.
+// The bare clean URL (e.g. /mendicot) serves that game's index.html.
+const MENDICOT_DIR = path.join(__dirname, 'games', 'mendicot', 'public');
+app.get('/mendicot', (_req, res) => res.sendFile(path.join(MENDICOT_DIR, 'index.html')));
+app.use('/mendicot', express.static(MENDICOT_DIR));
 const server = http.createServer(app);
 const io = new Server(server);
 

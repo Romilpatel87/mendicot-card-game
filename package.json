@@ -1,11 +1,11 @@
 {
-  "name": "mendicot-online",
+  "name": "taashghar",
   "version": "1.0.0",
-  "description": "Online multiplayer Mendicot (Dehla Pakad) — play with friends over the web.",
+  "description": "Taash Ghar — online Indian card games (Mendicot, with more on the way).",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "node test.js"
+    "test": "node games/mendicot/game.test.js"
   },
   "engines": {
     "node": ">=18"
