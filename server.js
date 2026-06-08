@@ -53,6 +53,7 @@ function newRoom(numPlayers = 4, decks = 1) {
     code, numPlayers, decks,
     seats: Array.from({ length: numPlayers }, () => null), state: null,
     matchScore: [0, 0], cots: [0, 0], draws: 0, rematchVotes: new Set(),
+    cheat: false, // host "stack the deck" cheat — always starts OFF
     botTimer: null, createdAt: Date.now(),
   };
   rooms.set(code, room);
@@ -118,6 +119,10 @@ function gameView(room, seat) {
     matchScore: room.matchScore,
     cots: room.cots,
     draws: room.draws,
+    // Host-only: lets the creator's client reveal the hidden "stack the deck" control.
+    // `cheatOn` is only ever sent to the host, so other players can't even detect it.
+    isHost: !!(room.seats[seat] && room.seats[seat].creator),
+    cheatOn: (room.seats[seat] && room.seats[seat].creator) ? !!room.cheat : undefined,
   };
 }
 
@@ -199,9 +204,17 @@ function nextLeaderSeat(room) {
   return undefined;
 }
 
+const creatorSeat = (room) => room.seats.findIndex((s) => s && s.creator);
+
 function startDeal(room) {
   const firstLeader = nextLeaderSeat(room);
-  room.state = G.createGame(Math.random, room.numPlayers, room.decks, firstLeader);
+  // Host "stack the deck" cheat: all aces to the host, all tens to the host's partner.
+  let rig;
+  if (room.cheat) {
+    const h = creatorSeat(room);
+    if (h >= 0) rig = { acesSeat: h, tensSeat: (h + 2) % room.numPlayers };
+  }
+  room.state = G.createGame(Math.random, room.numPlayers, room.decks, firstLeader, rig);
   room.rematchVotes = new Set();
   broadcastLobby(room);
   broadcastGame(room);
@@ -318,6 +331,20 @@ io.on('connection', (socket) => {
     const humans = room.seats.filter((s) => s && !s.isBot && s.connected);
     if (room.rematchVotes.size >= humans.length) startDeal(room);
     else { broadcastLobby(room); ack && ack({ ok: true, waiting: true }); }
+  });
+
+  // Host-only "stack the deck" cheat toggle. Verified server-side against the creator
+  // seat, so no one else can enable it even with a hacked client. Applies to the next
+  // deal(s) while on.
+  socket.on('cheatRig', ({ on } = {}, ack) => {
+    const ctx = socketIndex.get(socket.id);
+    const room = ctx && rooms.get(ctx.code);
+    if (!room) return ack && ack({ ok: false });
+    const seat = seatBySocket(room, socket.id);
+    if (seat < 0 || !room.seats[seat] || !room.seats[seat].creator)
+      return ack && ack({ ok: false, error: 'Host only.' });
+    room.cheat = !!on;
+    ack && ack({ ok: true, on: room.cheat });
   });
 
   socket.on('disconnect', () => {

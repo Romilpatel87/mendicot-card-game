@@ -82,18 +82,42 @@ function shuffle(deck, rng = Math.random) {
   return a;
 }
 
+// Rigged deal (host "stack the deck" cheat): give every Ace to `acesSeat` and every
+// ten to `tensSeat`, then deal the remaining cards to fill all hands evenly.
+function riggedDeal(fullDeck, numPlayers, acesSeat, tensSeat, rng) {
+  const cardsEach = fullDeck.length / numPlayers;
+  const aces = fullDeck.filter((c) => c.value === 14);
+  const tens = fullDeck.filter((c) => c.value === 10);
+  const rest = shuffle(fullDeck.filter((c) => c.value !== 14 && c.value !== 10), rng);
+  const hands = Array.from({ length: numPlayers }, () => []);
+  hands[acesSeat].push(...aces);
+  hands[tensSeat].push(...tens);
+  let ri = 0;
+  for (let seat = 0; seat < numPlayers; seat++) {
+    while (hands[seat].length < cardsEach && ri < rest.length) hands[seat].push(rest[ri++]);
+  }
+  return hands;
+}
+
 // Create a fresh game state. `rng` lets tests produce deterministic deals.
 // `firstLeader` (optional seat index) forces who leads the first trick — the server
 // uses it so the losing side starts the next deal (see the dealer/leader rules).
-function createGame(rng = Math.random, numPlayers = 4, decks, firstLeader) {
+// `rig` (optional { acesSeat, tensSeat }) stacks the deck for the host cheat.
+function createGame(rng = Math.random, numPlayers = 4, decks, firstLeader, rig) {
   if (![4, 6, 8].includes(numPlayers)) numPlayers = 4;
   decks = decksFor(numPlayers, decks);
-  const deck = shuffle(makeDeck(numPlayers, decks), rng);
-  const hands = Array.from({ length: numPlayers }, () => []);
-  for (let i = 0; i < deck.length; i++) hands[i % numPlayers].push(deck[i]);
+  const fullDeck = makeDeck(numPlayers, decks);
+  let hands;
+  if (rig && Number.isInteger(rig.acesSeat) && Number.isInteger(rig.tensSeat)) {
+    hands = riggedDeal(fullDeck, numPlayers, rig.acesSeat, rig.tensSeat, rng);
+  } else {
+    const deck = shuffle(fullDeck, rng);
+    hands = Array.from({ length: numPlayers }, () => []);
+    for (let i = 0; i < deck.length; i++) hands[i % numPlayers].push(deck[i]);
+  }
   for (const h of hands) h.sort(sortCards);
 
-  const tricksPerHand = deck.length / numPlayers; // 13 (4p), 8 (6p×1), 12 (6p×2), 13 (8p)
+  const tricksPerHand = fullDeck.length / numPlayers; // 13 (4p), 8 (6p×1), 12 (6p×2), 13 (8p)
   const leader = (Number.isInteger(firstLeader) && firstLeader >= 0 && firstLeader < numPlayers)
     ? firstLeader
     : nextSeat(Math.floor(rng() * numPlayers), numPlayers); // random otherwise

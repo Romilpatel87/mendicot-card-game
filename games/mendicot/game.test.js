@@ -184,6 +184,25 @@ fuzz(8, 2, 200000, 3000);
   check(r.leader >= 0 && r.leader < 4 && r.turn === r.leader, 'random deal still has a valid leader');
 }
 
+// 11) Targeted: host "stack the deck" cheat — all aces to one seat, all tens to partner.
+{
+  for (const [n, decks] of [[4, 1], [6, 1], [6, 2], [8, 2]]) {
+    const deckSize = G.makeDeck(n, decks).length;
+    const cardsEach = deckSize / n;
+    const t = 4 * (n === 8 ? 2 : decks); // tens/aces in this deck
+    const st = G.createGame(mulberry32(5), n, decks, 0, { acesSeat: 0, tensSeat: 2 });
+    const tag = `${n}p×${decks}`;
+    check(st.hands.every((h) => h.length === cardsEach), `${tag}: rigged hands sized right`);
+    check(st.hands[0].filter((c) => c.value === 14).length === t, `${tag}: seat0 holds all ${t} aces`);
+    check(st.hands[2].filter((c) => c.value === 10).length === t, `${tag}: seat2 holds all ${t} tens`);
+    const acesElse = st.hands.reduce((s, h, i) => s + (i === 0 ? 0 : h.filter((c) => c.value === 14).length), 0);
+    const tensElse = st.hands.reduce((s, h, i) => s + (i === 2 ? 0 : h.filter((c) => c.value === 10).length), 0);
+    check(acesElse === 0, `${tag}: no aces leak to others`);
+    check(tensElse === 0, `${tag}: no tens leak to others`);
+    check(new Set(st.hands.flat().map((c) => c.uid)).size === deckSize, `${tag}: full deck still dealt`);
+  }
+}
+
 // 7) Targeted: two-deck "second identical card wins".
 {
   const aceEarly = { suit: 'C', value: 14 };

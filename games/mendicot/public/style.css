@@ -299,6 +299,7 @@ input.invalid, input.invalid:focus { border-color: #ff6b5e; box-shadow: 0 0 0 1p
 .snd-row input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--gold); cursor: pointer; }
 .snd-section { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--gold-dim);
   margin-top: 4px; border-top: 1px solid rgba(255,255,255,.08); padding-top: 14px; }
+.snd-hint { font-size: 11px; color: rgba(244,236,216,0.5); line-height: 1.45; margin: 2px 0 0; }
 .snd-actions { margin-top: auto; }
 
 /* responsive: phones */

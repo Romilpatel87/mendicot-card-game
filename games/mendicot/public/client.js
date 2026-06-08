@@ -71,6 +71,23 @@
   };
   syncSoundControls();
 
+  // Host-only "stack the deck" cheat. Injected into the sound panel ONLY for the host,
+  // so it never appears in other players' page source. Server enforces host-only too.
+  let cheatInjected = false;
+  function ensureHostCheat() {
+    if (cheatInjected || !game || !game.isHost || !soundPanel) return;
+    const wrap = document.createElement('div');
+    wrap.innerHTML =
+      '<div class="snd-section">Host only 🎴</div>' +
+      '<label class="snd-row"><span>Stack the deck</span><input type="checkbox" id="cheatRig" /></label>' +
+      '<p class="snd-hint">Next deal: you get every Ace, your partner gets every 10. Turn off to deal fair again.</p>';
+    soundPanel.insertBefore(wrap, soundPanel.querySelector('.snd-actions'));
+    cheatInjected = true;
+    const cb = document.getElementById('cheatRig');
+    cb.checked = !!game.cheatOn;
+    cb.onchange = (e) => socket.emit('cheatRig', { on: e.target.checked }, () => {});
+  }
+
   // ---- session persistence (for reconnects / refresh) ----
   const SKEY = 'mendicot.session';
   const saveSession = () => localStorage.setItem(SKEY, JSON.stringify({ code: me.code, token: me.token, name: me.name }));
@@ -402,6 +419,7 @@
     renderTrumpAndStatus(v, completed);
     renderScoreboard(v);
     renderHand(v, completed);
+    ensureHostCheat();
   }
 
   // ---- result overlay ----
