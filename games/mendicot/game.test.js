@@ -171,6 +171,19 @@ fuzz(8, 2, 200000, 3000);
   check(G.decksFor(8, 1) === 2 && G.decksFor(4, 2) === 1, 'decksFor forces 8p→2 and 4p→1');
 }
 
+// 10) Targeted: createGame honours a forced firstLeader (losing side starts next deal).
+{
+  for (const n of [4, 6, 8]) {
+    const want = 3 % n;
+    const st = G.createGame(mulberry32(7), n, n === 8 ? 2 : 1, want);
+    check(st.leader === want && st.turn === want, `${n}p: firstLeader sets leader & turn`);
+    check(st.dealer === ((want - 1 + n) % n), `${n}p: dealer sits to the leader's right`);
+  }
+  // No firstLeader → leader is still a valid seat.
+  const r = G.createGame(mulberry32(7), 4);
+  check(r.leader >= 0 && r.leader < 4 && r.turn === r.leader, 'random deal still has a valid leader');
+}
+
 // 7) Targeted: two-deck "second identical card wins".
 {
   const aceEarly = { suit: 'C', value: 14 };

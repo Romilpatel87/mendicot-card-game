@@ -174,8 +174,34 @@ function finishDeal(room) {
   broadcastGame(room);
 }
 
+// Who leads (starts) the next deal:
+//  • while the cot counts are UNEQUAL, the team behind on cots must start every deal
+//    until the cots are equal again (cot penalty — takes priority);
+//  • otherwise the team that LOST the previous deal starts.
+// The seat rotates to the next player of that team after the previous leader. Returns
+// undefined for the very first deal of a room (then createGame picks at random).
+function nextLeaderSeat(room) {
+  const prev = room.state;
+  if (!prev || !prev.result) return undefined;
+  const N = room.numPlayers;
+  let leadTeam;
+  if (room.cots[0] !== room.cots[1]) {
+    leadTeam = room.cots[0] < room.cots[1] ? 0 : 1;     // behind on cots starts
+  } else if (prev.result.draw || prev.result.winningTeam == null) {
+    return G.nextSeat(prev.leader, N);                   // drawn deal: just rotate
+  } else {
+    leadTeam = 1 - prev.result.winningTeam;             // losers of last deal start
+  }
+  for (let i = 1; i <= N; i++) {
+    const s = (prev.leader + i) % N;
+    if (G.teamOf(s) === leadTeam) return s;
+  }
+  return undefined;
+}
+
 function startDeal(room) {
-  room.state = G.createGame(Math.random, room.numPlayers, room.decks);
+  const firstLeader = nextLeaderSeat(room);
+  room.state = G.createGame(Math.random, room.numPlayers, room.decks, firstLeader);
   room.rematchVotes = new Set();
   broadcastLobby(room);
   broadcastGame(room);

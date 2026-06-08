@@ -83,7 +83,9 @@ function shuffle(deck, rng = Math.random) {
 }
 
 // Create a fresh game state. `rng` lets tests produce deterministic deals.
-function createGame(rng = Math.random, numPlayers = 4, decks) {
+// `firstLeader` (optional seat index) forces who leads the first trick — the server
+// uses it so the losing side starts the next deal (see the dealer/leader rules).
+function createGame(rng = Math.random, numPlayers = 4, decks, firstLeader) {
   if (![4, 6, 8].includes(numPlayers)) numPlayers = 4;
   decks = decksFor(numPlayers, decks);
   const deck = shuffle(makeDeck(numPlayers, decks), rng);
@@ -92,8 +94,10 @@ function createGame(rng = Math.random, numPlayers = 4, decks) {
   for (const h of hands) h.sort(sortCards);
 
   const tricksPerHand = deck.length / numPlayers; // 13 (4p), 8 (6p×1), 12 (6p×2), 13 (8p)
-  const dealer = Math.floor(rng() * numPlayers);
-  const leader = nextSeat(dealer, numPlayers); // player to dealer's left leads first
+  const leader = (Number.isInteger(firstLeader) && firstLeader >= 0 && firstLeader < numPlayers)
+    ? firstLeader
+    : nextSeat(Math.floor(rng() * numPlayers), numPlayers); // random otherwise
+  const dealer = (leader - 1 + numPlayers) % numPlayers; // dealer sits to the leader's right
 
   return {
     phase: 'playing',
