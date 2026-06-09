@@ -206,19 +206,18 @@
     Once that trick ends, the trump is <b>fixed for the rest of the game</b>.</p>
     <h4>Winning</h4>
     <ul>
-      <li>Take <b>all</b> the mendis → win the <b>cot</b>. Take a majority → win the deal.</li>
-      <li>An even split → whoever took more tricks wins.</li>
-      <li><b>Single deck</b> = 4 tens: take 3+ to win, all 4 for the cot.</li>
-      <li><b>Double deck</b> = 8 tens: take 5+ to win, all 8 for the cot.</li>
+      <li>There are always <b>4 mendis</b> — one 10 per suit.</li>
+      <li>Take <b>all 4</b> → win the <b>cot</b>. Take <b>3+</b> → win the deal.</li>
+      <li>A <b>2–2</b> split → whoever took more tricks wins.</li>
     </ul>
     <h4>Table sizes</h4>
     <ul>
-      <li>4 players — single deck (52 cards).</li>
-      <li>6 players — your choice: single deck (48 cards, 8 tricks) or double deck (72 cards, 12 tricks).</li>
-      <li>8 players — double deck (104 cards, 13 tricks).</li>
+      <li>4 players — single deck (52 cards, 13 tricks).</li>
+      <li>6 players — your choice: single deck (48 cards, 8 tricks) or double deck (60 cards, 10 tricks).</li>
+      <li>8 players — double deck (96 cards, 12 tricks).</li>
     </ul>
     <h4>Two decks</h4>
-    <p>Every card exists twice. If the same card is played again, the <b>second one wins</b> — e.g. an opponent's Ace of Clubs is beaten by the other Ace of Clubs played after it.</p>
+    <p>Most cards exist twice, so if the same card is played again the <b>second one wins</b> — e.g. an opponent's Ace of Clubs is beaten by the other Ace of Clubs played after it. There's still just <b>one 10 per suit</b>, so a suit's mendi is never split.</p>
     <p>Alternate seats are partners (2-v-2 with 4 players, 3-v-3 with 6, 4-v-4 with 8). Play cooperatively!</p>`;
 
   // ======================================================================

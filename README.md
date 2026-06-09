@@ -26,16 +26,19 @@ the trump. Once that trick ends, the trump is **fixed for the rest of the deal**
 
 **Decks & sizes.**
 
-| Table | Deck | Cards | Tricks | Tens (mendis) |
-|---|---|---|---|---|
-| 4 players | single | 52 | 13 | 4 (3+ wins, 4 = cot) |
-| 6 players | single (2s removed) | 48 | 8 | 4 (3+ wins, 4 = cot) |
-| 6 players | double (2–5 removed) | 72 | 12 | 8 (5+ wins, 8 = cot) |
-| 8 players | double (full) | 104 | 13 | 8 (5+ wins, 8 = cot) |
+There are always **4 mendis** (one 10 per suit): take 3+ to win, all 4 for the cot, 2–2 decided by tricks.
 
-In **double-deck** games every card exists twice, so if the same card is played
+| Table | Deck | Cards | Tricks |
+|---|---|---|---|
+| 4 players | single | 52 | 13 |
+| 6 players | single (2s removed) | 48 | 8 |
+| 6 players | double (7→A, one 10 per suit) | 60 | 10 |
+| 8 players | double (one 10 & one 2 per suit) | 96 | 12 |
+
+In **double-deck** games most cards exist twice, so if the same card is played
 again the **second one wins** (e.g. an opponent's Ace of Clubs is beaten by the
-other Ace of Clubs played after it). Full rules are on the in-app "How to play" panel.
+other Ace of Clubs played after it). Tens are kept single — one per suit — so a
+suit's mendi is never split. Full rules are on the in-app "How to play" panel.
 
 ---
 

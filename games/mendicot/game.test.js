@@ -18,7 +18,7 @@ function fuzz(numPlayers, decks, seedBase, count) {
   decks = G.decksFor(numPlayers, decks);
   const deckSize = G.makeDeck(numPlayers, decks).length;
   const cardsEach = deckSize / numPlayers;
-  const totalMendis = 4 * decks; // four tens per deck
+  const totalMendis = 4; // one ten per suit in every mode now
   const half = totalMendis / 2;
   for (let s = 0; s < count; s++) {
     const seed = seedBase + s;
@@ -31,18 +31,22 @@ function fuzz(numPlayers, decks, seedBase, count) {
     check(state.hands.every((h) => h.length === cardsEach), `${tag}: ${cardsEach} cards each`);
     const allIds = new Set(state.hands.flat().map((c) => c.uid));
     check(allIds.size === deckSize, `${tag}: ${deckSize} unique cards dealt`);
+    check(state.hands.flat().filter((c) => c.value === 10).length === 4, `${tag}: exactly 4 tens (one per suit)`);
     if (numPlayers === 6 && decks === 1) {
       check(!state.hands.flat().some((c) => c.value === 2), `${tag}: no 2s in 6p single deck`);
     }
     if (numPlayers === 6 && decks === 2) {
-      check(!state.hands.flat().some((c) => c.value < 6), `${tag}: no 2–5 in 6p double deck`);
+      check(!state.hands.flat().some((c) => c.value < 7), `${tag}: no 2–6 in 6p double deck`);
     }
     if (decks === 2) {
-      // Two decks: exactly two physical copies of every logical card.
+      // Two decks: tens are single (one per suit); 8-player also keeps a single 2 per
+      // suit; everything else exists twice.
       const counts = {};
       for (const c of state.hands.flat()) counts[c.id] = (counts[c.id] || 0) + 1;
-      check(Object.keys(counts).length === deckSize / 2, `${tag}: ${deckSize / 2} distinct card faces`);
-      check(Object.values(counts).every((n) => n === 2), `${tag}: every card appears twice`);
+      for (const [id, n] of Object.entries(counts)) {
+        const single = id.startsWith('10') || (numPlayers === 8 && id.startsWith('2'));
+        check(n === (single ? 1 : 2), `${tag}: ${id} appears ${single ? 'once' : 'twice'}`);
+      }
     }
 
     let guard = 0;
@@ -160,13 +164,14 @@ fuzz(8, 2, 200000, 3000);
   check(deck6.filter((c) => c.value === 10).length === 4, '6-player single deck keeps all four mendis');
 }
 
-// 9) Targeted: 6-player double deck — 2–5 stripped, 72 cards (6→A), eight tens.
+// 9) Targeted: 6-player double deck — 2–6 stripped, one ten per suit, 60 cards (7→A).
 {
   const deck = G.makeDeck(6, 2);
-  check(deck.length === 72, '6-player double deck has 72 cards');
-  check(!deck.some((c) => c.value < 6), '6-player double deck drops 2,3,4,5');
-  check(deck.filter((c) => c.value === 10).length === 8, '6-player double deck has eight mendis');
-  check(new Set(deck.map((c) => c.uid)).size === 72, '6-player double deck has 72 unique uids');
+  check(deck.length === 60, '6-player double deck has 60 cards');
+  check(!deck.some((c) => c.value < 7), '6-player double deck drops 2,3,4,5,6');
+  check(deck.filter((c) => c.value === 10).length === 4, '6-player double deck has four mendis (one per suit)');
+  check(deck.filter((c) => c.value === 14).length === 8, '6-player double deck still has eight aces (duplicated)');
+  check(new Set(deck.map((c) => c.uid)).size === 60, '6-player double deck has 60 unique uids');
   check(G.decksFor(6, 2) === 2 && G.decksFor(6, 1) === 1, 'decksFor honours the 6-player choice');
   check(G.decksFor(8, 1) === 2 && G.decksFor(4, 2) === 1, 'decksFor forces 8p→2 and 4p→1');
 }
@@ -189,12 +194,13 @@ fuzz(8, 2, 200000, 3000);
   for (const [n, decks] of [[4, 1], [6, 1], [6, 2], [8, 2]]) {
     const deckSize = G.makeDeck(n, decks).length;
     const cardsEach = deckSize / n;
-    const t = 4 * (n === 8 ? 2 : decks); // tens/aces in this deck
+    const acesTotal = 4 * decks; // aces stay duplicated in two-deck games
+    const tensTotal = 4;         // but tens are now one per suit
     const st = G.createGame(mulberry32(5), n, decks, 0, { acesSeat: 0, tensSeat: 2 });
     const tag = `${n}p×${decks}`;
     check(st.hands.every((h) => h.length === cardsEach), `${tag}: rigged hands sized right`);
-    check(st.hands[0].filter((c) => c.value === 14).length === t, `${tag}: seat0 holds all ${t} aces`);
-    check(st.hands[2].filter((c) => c.value === 10).length === t, `${tag}: seat2 holds all ${t} tens`);
+    check(st.hands[0].filter((c) => c.value === 14).length === acesTotal, `${tag}: seat0 holds all ${acesTotal} aces`);
+    check(st.hands[2].filter((c) => c.value === 10).length === tensTotal, `${tag}: seat2 holds all ${tensTotal} tens`);
     const acesElse = st.hands.reduce((s, h, i) => s + (i === 0 ? 0 : h.filter((c) => c.value === 14).length), 0);
     const tensElse = st.hands.reduce((s, h, i) => s + (i === 2 ? 0 : h.filter((c) => c.value === 10).length), 0);
     check(acesElse === 0, `${tag}: no aces leak to others`);
@@ -226,9 +232,11 @@ fuzz(8, 2, 200000, 3000);
 // 8) Targeted: 8-player deck and teams.
 {
   const deck8 = G.makeDeck(8);
-  check(deck8.length === 104, '8-player deck has 104 cards (two decks)');
-  check(new Set(deck8.map((c) => c.uid)).size === 104, '8-player deck has 104 unique uids');
-  check(deck8.filter((c) => c.value === 10).length === 8, '8-player deck has eight mendis');
+  check(deck8.length === 96, '8-player deck has 96 cards (two decks, single tens & 2s)');
+  check(new Set(deck8.map((c) => c.uid)).size === 96, '8-player deck has 96 unique uids');
+  check(deck8.filter((c) => c.value === 10).length === 4, '8-player deck has four mendis (one per suit)');
+  check(deck8.filter((c) => c.value === 2).length === 4, '8-player deck has one 2 per suit');
+  check(deck8.filter((c) => c.value === 14).length === 8, '8-player deck still has eight aces (duplicated)');
   const t0 = [0, 2, 4, 6].map(G.teamOf), t1 = [1, 3, 5, 7].map(G.teamOf);
   check(t0.every((x) => x === 0), 'seats 0,2,4,6 are team 0');
   check(t1.every((x) => x === 1), 'seats 1,3,5,7 are team 1');

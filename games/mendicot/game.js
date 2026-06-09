@@ -2,17 +2,17 @@
 // Supports 4 players (teams {0,2} vs {1,3}, 52 cards, 13 tricks),
 // 6 players (teams {0,2,4} vs {1,3,5}) in two flavours:
 //   • single deck — the four 2s removed, 48 cards, 8 tricks;
-//   • double deck — 2–5 removed from each of two decks, 72 cards (6→A), 12 tricks;
-// and 8 players (teams {0,2,4,6} vs {1,3,5,7}, TWO full decks = 104 cards, 13 tricks).
+//   • double deck — two 7→A decks with one ten per suit, 60 cards, 10 tricks;
+// and 8 players (teams {0,2,4,6} vs {1,3,5,7}, two decks with one ten & one 2 per suit,
+// 96 cards, 12 tricks).
 // In every mode each player sits between two opponents: even seats are team 0,
-// odd seats are team 1.
+// odd seats are team 1. There are always exactly 4 mendis — one ten per suit.
 //
-// Two-deck note (8 players): every card exists twice, so a trick can hold two
-// identical cards. The rule is "the later-played duplicate wins" — e.g. if an
-// opponent plays the Ace of Clubs and a teammate later plays the other Ace of
-// Clubs, the second one takes the trick. Because trickWinner walks the trick in
-// play order and `beats` breaks ties in favour of the challenger, this falls out
-// naturally (see `beats`).
+// Two-deck note: most cards exist twice, so a trick can hold two identical cards.
+// The rule is "the later-played duplicate wins" — e.g. if an opponent plays the Ace
+// of Clubs and a teammate later plays the other Ace of Clubs, the second one takes
+// the trick (trickWinner walks the trick in play order and `beats` breaks ties in
+// favour of the challenger). Tens are kept single, so a suit's mendi is never split.
 //
 // Trump rule: trump is broken the first time a player can't follow the lead suit.
 // Within that ESTABLISHING trick every void player's off-suit card overrides the
@@ -58,12 +58,19 @@ function makeDeck(numPlayers = 4, decks) {
   decks = decksFor(numPlayers, decks);
   let ranks = RANKS;
   if (numPlayers === 6) {
-    ranks = decks === 2 ? RANKS.filter((r) => r.value >= 6) : RANKS.filter((r) => r.value !== 2);
+    // single deck: strip 2s (48 cards). double deck: strip 2–6 so that, with only one
+    // ten per suit (below), 60 cards deal evenly to 6 players (10 each, 10 tricks).
+    ranks = decks === 2 ? RANKS.filter((r) => r.value >= 7) : RANKS.filter((r) => r.value !== 2);
   }
+  // Two-deck games keep just ONE ten per suit → 4 mendis, not 8. The 8-player deck
+  // also keeps a single 2 per suit so 96 cards still deal evenly (8 × 12). These ranks
+  // are dealt from the first deck only; the second deck skips them.
+  const singleCopyValues = decks === 2 ? (numPlayers === 8 ? [10, 2] : [10]) : [];
   const deck = [];
   for (let d = 0; d < decks; d++) {
     for (const suit of SUITS) {
       for (const r of ranks) {
+        if (d > 0 && singleCopyValues.includes(r.value)) continue; // skip the duplicate copy
         const id = r.label + suit;
         deck.push({ suit, label: r.label, value: r.value, id, uid: decks > 1 ? `${id}#${d}` : id });
       }
@@ -272,7 +279,7 @@ function finishGame(state, events = {}) {
   const t0 = state.tricksWon[0];
   const t1 = state.tricksWon[1];
 
-  const totalMendis = 4 * state.decks; // four tens per deck (eight with two decks)
+  const totalMendis = 4; // one ten per suit in every mode now (two-deck keeps a single 10)
   const half = totalMendis / 2;
 
   let winningTeam, cot, reason, draw = false;
