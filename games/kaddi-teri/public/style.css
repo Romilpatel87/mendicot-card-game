@@ -1,0 +1,155 @@
+/* style.css (Kali Tiri) — a FOLK redesign on a woven indigo mat, with a terracotta +
+   turmeric + indigo palette and decorative folk borders. Loads after the shared Mendicot
+   stylesheet and overrides its surfaces; the card layout and positioning logic (seat
+   anchors, trick circle, hand bar) are reused so cards stay clear and readable. */
+
+:root {
+  --gold: #e8a31a;            /* turmeric */
+  --gold-dim: #bd840f;
+  --gold-soft: rgba(232,163,26,0.20);
+  --cream: #f6ecd4;
+  --cream-2: #ece0c8;
+  --ink: #3a2a1e;
+  --red: #bf3b2b;
+  --us: #4a90c2;             /* bidding team — indigo blue */
+  --them: #d9663f;           /* others — terracotta */
+  --shadow: 0 18px 40px rgba(0,0,0,0.5);
+  --terra: #c75b39;          /* terracotta (custom) */
+  --indigo: #2b4a7d;         /* indigo (custom) */
+}
+
+/* ---- woven indigo mat background ---- */
+body {
+  color: var(--cream);
+  background-color: #16284a;
+  background-image:
+    repeating-linear-gradient(45deg, rgba(255,255,255,0.03) 0 2px, transparent 2px 9px),
+    repeating-linear-gradient(-45deg, rgba(0,0,0,0.07) 0 2px, transparent 2px 9px),
+    radial-gradient(120% 120% at 50% -10%, #284468 0%, #1b3158 55%, #101f3c 100%);
+}
+.grain { opacity: 0.04; }
+
+/* ---- play area: indigo mat inside a turmeric + terracotta folk frame ---- */
+.felt {
+  background:
+    repeating-linear-gradient(45deg, rgba(255,255,255,0.025) 0 2px, transparent 2px 10px),
+    radial-gradient(120% 90% at 50% 40%, #2c4c80 0%, #20396a 65%, #16294e 100%);
+  border: 3px solid var(--terra);
+  box-shadow: inset 0 0 0 3px var(--gold), inset 0 0 60px rgba(0,0,0,0.45), var(--shadow);
+}
+.felt::after { inset: 14px; border: 1px dashed rgba(232,163,26,0.5); border-radius: 16px; }
+
+/* ---- panels: warm dark indigo with turmeric + terracotta folk borders ---- */
+.home-card, .lobby-card, .overlay-card {
+  background: linear-gradient(180deg, rgba(38,60,104,0.96), rgba(18,32,60,0.98));
+  border: 1px solid var(--gold);
+  box-shadow: 0 0 0 3px rgba(199,91,57,0.55), var(--shadow);
+}
+.scoreboard {
+  background: linear-gradient(180deg, rgba(38,60,104,0.88), rgba(18,32,60,0.92));
+  border: 1px solid rgba(232,163,26,0.5); box-shadow: 0 0 0 2px rgba(199,91,57,0.4), 0 10px 24px rgba(0,0,0,0.4);
+}
+
+/* ---- folk heading font ---- */
+h1, h2, .brand, .crest, .result-crest, .code-chip, .panel-title { font-family: 'Yatra One', system-ui, cursive; letter-spacing: 0.01em; }
+.home-card h1 { font-size: 40px; line-height: 1.05; }
+.crest { letter-spacing: 0.35em; }
+
+/* ====================================================================== */
+/*  CARDS — readable rectangular faces on a warm paper ground, with folk  */
+/*  turmeric/terracotta accents. Reuses the Mendicot .card/.corner/.pip   */
+/*  layout; only the surface + point/honour accents are folk-styled.      */
+/* ====================================================================== */
+.card {
+  background: linear-gradient(160deg, #fbf3dd 0%, #f0e2c1 100%);
+  box-shadow: inset 0 0 0 1px rgba(199,91,57,0.35), 0 4px 10px rgba(0,0,0,0.4);
+}
+/* honour / point cards get a turmeric frame so they read at a glance */
+.card.hi { box-shadow: inset 0 0 0 2px var(--gold), 0 4px 10px rgba(0,0,0,0.4); }
+
+/* point value badge */
+.card .pts-badge {
+  position: absolute; top: -6px; right: -6px; font-size: 9px; font-weight: 700; z-index: 2;
+  background: var(--terra); color: #fff3e6; border-radius: 999px; padding: 1px 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+}
+
+.hand .card.selected { box-shadow: inset 0 0 0 2px var(--gold), 0 10px 18px rgba(0,0,0,0.5); }
+
+/* the called partner card in your hand — the declarer's secret ally */
+.hand .card.partner-card { box-shadow: inset 0 0 0 2px var(--us), 0 6px 14px rgba(0,0,0,0.5); }
+.hand .card.partner-card::before {
+  content: '🤝'; position: absolute; top: -8px; left: -6px; font-size: 12px; z-index: 3;
+  background: var(--us); border-radius: 50%; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center;
+}
+
+/* face-down piles in the seat boxes — terracotta woven backs */
+.cardback {
+  background: repeating-linear-gradient(45deg, #c75b39 0 3px, #a8472a 3px 6px);
+  border: 1px solid var(--gold);
+}
+
+/* ====================================================================== */
+/*  KALI-TIRI UI  (bidding / declaring / point tally)                     */
+/* ====================================================================== */
+.bid-panel, .declare-panel {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 6;
+  width: min(92vw, 420px); text-align: center;
+  background: linear-gradient(180deg, rgba(38,60,104,0.97), rgba(18,32,60,0.98));
+  border: 1px solid var(--gold); border-radius: 18px; padding: 18px 20px;
+  box-shadow: 0 0 0 3px rgba(199,91,57,0.55), var(--shadow);
+}
+.bid-panel[hidden], .declare-panel[hidden] { display: none; }
+.panel-title { color: var(--gold); font-size: 19px; margin-bottom: 4px; }
+.panel-sub { font-size: 13px; color: rgba(246,236,212,0.8); margin-bottom: 14px; }
+.panel-sub b { color: var(--cream); }
+
+.bid-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.bid-btn {
+  font-family: 'Jost', sans-serif; font-weight: 600; font-size: 15px; cursor: pointer; color: #2a1404;
+  background: linear-gradient(180deg, var(--gold), var(--gold-dim)); border: none; border-radius: 999px;
+  padding: 10px 16px; min-width: 64px; box-shadow: 0 6px 16px rgba(232,163,26,0.28); transition: transform .12s;
+}
+.bid-btn:hover:not(:disabled) { transform: translateY(-1px); }
+.bid-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.bid-btn.pass { background: rgba(255,255,255,0.08); color: var(--cream); border: 1px solid var(--terra); box-shadow: none; }
+.bid-timer { margin-top: 12px; font-size: 13px; color: var(--gold); letter-spacing: 0.06em; }
+.bid-timer .bar { height: 4px; border-radius: 4px; background: rgba(255,255,255,0.12); margin-top: 6px; overflow: hidden; }
+.bid-timer .bar > i { display: block; height: 100%; background: var(--terra); transition: width .25s linear; }
+
+.trump-pick { display: flex; gap: 10px; justify-content: center; margin: 6px 0 14px; }
+.trump-opt {
+  width: 52px; height: 52px; border-radius: 50%; font-size: 26px; cursor: pointer;
+  background: rgba(0,0,0,0.22); border: 2px solid var(--terra); color: var(--cream);
+  display: flex; align-items: center; justify-content: center; transition: all .15s;
+}
+.trump-opt.red { color: var(--red); }
+.trump-opt.sel { border-color: var(--gold); box-shadow: 0 0 0 2px var(--gold); background: rgba(232,163,26,0.16); }
+
+.pg-label { font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold-dim); margin: 6px 0; }
+.partner-grid { display: grid; grid-template-columns: repeat(13, 1fr); gap: 3px; max-height: 30vh; overflow-y: auto; padding: 2px; }
+.pg-card {
+  font-size: 11px; line-height: 1.1; text-align: center; padding: 5px 0; border-radius: 999px; cursor: pointer;
+  background: #f3e7cd; color: var(--ink); user-select: none; border: 2px solid transparent;
+}
+.pg-card.red { color: var(--red); }
+.pg-card.sel { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold); }
+.pg-card .s { display: block; font-size: 12px; }
+.declare-panel .btn { margin-top: 14px; }
+.declare-hint { font-size: 12px; color: rgba(246,236,212,0.6); margin-top: 8px; }
+
+.seat-chip {
+  margin-top: 4px; font-size: 11px; letter-spacing: 0.04em; color: var(--cream);
+  background: rgba(0,0,0,0.32); border: 1px solid var(--terra); border-radius: 999px; padding: 2px 8px; display: inline-block;
+}
+.seat-chip.pass { color: rgba(246,236,212,0.5); border-color: rgba(199,91,57,0.4); }
+.seat-chip.high { background: rgba(232,163,26,0.22); border-color: var(--gold); color: var(--gold); }
+.player .badge-dealer { font-size: 9px; background: rgba(232,163,26,0.25); color: var(--gold); border-radius: 4px; padding: 1px 5px; letter-spacing: 0.06em; margin-left: 4px; }
+
+.sb-points { display: flex; justify-content: space-between; align-items: baseline; padding: 4px 0; }
+.sb-points .big { font-family: 'Yatra One', cursive; font-size: 18px; }
+.sb-need { font-size: 11px; color: var(--gold); margin-top: 2px; }
+.sb-scorelist { margin-top: 4px; }
+.sb-scorelist .row { display: flex; justify-content: space-between; font-size: 12px; padding: 2px 0; }
+.sb-scorelist .row.you span:first-child { color: var(--gold); }
+
+/* ---- mobile ---- (card sizing is inherited from the Mendicot stylesheet) */

@@ -21,8 +21,15 @@ app.use(express.static(path.join(__dirname, 'public')));
 const MENDICOT_DIR = path.join(__dirname, 'games', 'mendicot', 'public');
 app.get('/mendicot', (_req, res) => res.sendFile(path.join(MENDICOT_DIR, 'index.html')));
 app.use('/mendicot', express.static(MENDICOT_DIR));
+
+// Kali Tiri UI (served under /kaddi-teri); its realtime lives on the "/kt" namespace.
+const KT_DIR = path.join(__dirname, 'games', 'kaddi-teri', 'public');
+app.get('/kaddi-teri', (_req, res) => res.sendFile(path.join(KT_DIR, 'index.html')));
+app.use('/kaddi-teri', express.static(KT_DIR));
+
 const server = http.createServer(app);
 const io = new Server(server);
+require('./games/kaddi-teri/server')(io); // sets up the /kt namespace
 
 const PORT = process.env.PORT || 3000;
 const BOT_DELAY_MS = Number(process.env.BOT_DELAY_MS) || 950; // pause before a bot plays
