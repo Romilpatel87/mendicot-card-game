@@ -39,16 +39,21 @@
   // ======================================================================
   //  HOME
   // ======================================================================
-  let chosenPlayers = 4;
-  const modeToggle = $('modeToggle');
-  const ladderText = (n) => {
-    const start = Math.min(10, Math.floor(52 / n));
+  let chosenPlayers = 4, chosenDecks = 1;
+  const modeToggle = $('modeToggle'), deckToggle = $('deckToggle');
+  const ladderText = (n, decks) => {
+    const start = Math.min(10, Math.floor((52 * decks) / n));
     return `Starts at ${start} cards, down to 1 and back up — ${start * 2 - 1} hands.`;
   };
-  const setLadderNote = () => { $('ladderNote').textContent = ladderText(chosenPlayers); };
+  const setLadderNote = () => { $('ladderNote').textContent = ladderText(chosenPlayers, chosenDecks); };
   modeToggle.querySelectorAll('.mode-opt').forEach((b) => b.onclick = () => {
     chosenPlayers = +b.dataset.players;
     modeToggle.querySelectorAll('.mode-opt').forEach((x) => x.classList.toggle('active', x === b));
+    setLadderNote();
+  });
+  deckToggle.querySelectorAll('.mode-opt').forEach((b) => b.onclick = () => {
+    chosenDecks = +b.dataset.decks;
+    deckToggle.querySelectorAll('.mode-opt').forEach((x) => x.classList.toggle('active', x === b));
     setLadderNote();
   });
   setLadderNote();
@@ -56,7 +61,7 @@
   $('createBtn').onclick = () => {
     const name = requireName(); if (!name) return;
     me.name = name;
-    socket.emit('createRoom', { name, players: chosenPlayers }, (res) => {
+    socket.emit('createRoom', { name, players: chosenPlayers, decks: chosenDecks }, (res) => {
       if (!res || !res.ok) return setHomeError(res && res.error);
       me.code = res.code; me.token = res.token; me.seat = res.seat; saveSession();
     });
@@ -91,7 +96,8 @@
     <h4>Bidding</h4>
     <ul><li>Say how many tricks you'll take (0 is fine). The dealer bids last and can't make the bids total the number of tricks — someone always misses.</li></ul>
     <h4>Play</h4>
-    <ul><li>Follow suit if you can; highest trump wins, else the highest card of the led suit.</li></ul>
+    <ul><li>Follow suit if you can; highest trump wins, else the highest card of the led suit.</li>
+    <li><b>Double deck:</b> every card exists twice — if an identical card is played after yours, the <b>second one wins</b>.</li></ul>
     <h4>Scoring</h4>
     <ul><li><b>1 point</b> per trick won, <b>+10</b> if you took exactly your bid.</li>
     <li>Highest total after the final hand wins.</li></ul>`;
@@ -217,7 +223,7 @@
   }
 
   function renderMatchStrip(v) {
-    $('matchStrip').innerHTML = `Hand <b>${v.handNumber}</b>/${v.totalHands} · ${v.cardsThisHand} cards · Trump <span class="${isRed(v.trump) ? 'tr' : ''}">${SUIT[v.trump]}</span>`;
+    $('matchStrip').innerHTML = `Hand <b>${v.handNumber}</b>/${v.totalHands} · ${v.cardsThisHand} cards · Trump <span class="${isRed(v.trump) ? 'tr' : ''}">${SUIT[v.trump]}</span>${v.decks === 2 ? ' · 2 decks' : ''}`;
   }
 
   // ---- bid panel ----

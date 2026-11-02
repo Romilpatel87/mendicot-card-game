@@ -25,27 +25,34 @@ const RANKS = [
 ];
 
 const nextSeat = (seat, n) => (seat + 1) % n;
+const decksFor = (decks) => (decks === 2 ? 2 : 1);
 
-// Largest opening deal that still fits one 52-card deck, capped at 10 (3-5p→10, 6p→8, 7p→7).
-function startCardsFor(numPlayers) {
-  return Math.min(10, Math.floor(52 / numPlayers));
+// Largest opening deal that still fits the deck, capped at 10. One deck: 3-5p→10, 6p→8,
+// 7p→7. Two decks (104 cards) comfortably start every table at 10.
+function startCardsFor(numPlayers, decks = 1) {
+  return Math.min(10, Math.floor((52 * decksFor(decks)) / numPlayers));
 }
 
 // The full ladder of hand sizes: S, S-1, … , 1, 2, … , S  (length 2S-1).
-function handSizesFor(numPlayers) {
-  const s = startCardsFor(numPlayers);
+function handSizesFor(numPlayers, decks = 1) {
+  const s = startCardsFor(numPlayers, decks);
   const sizes = [];
   for (let k = s; k >= 1; k--) sizes.push(k);
   for (let k = 2; k <= s; k++) sizes.push(k);
   return sizes;
 }
 
-function makeDeck() {
+// One or two 52-card decks. With two decks every card exists twice; `uid` (e.g. "AS#1")
+// tells the physical copies apart while `id` ("AS") stays the logical card.
+function makeDeck(decks = 1) {
+  decks = decksFor(decks);
   const deck = [];
-  for (const suit of SUITS) {
-    for (const r of RANKS) {
-      const id = r.label + suit;
-      deck.push({ suit, label: r.label, value: r.value, id, uid: id });
+  for (let d = 0; d < decks; d++) {
+    for (const suit of SUITS) {
+      for (const r of RANKS) {
+        const id = r.label + suit;
+        deck.push({ suit, label: r.label, value: r.value, id, uid: decks > 1 ? `${id}#${d}` : id });
+      }
     }
   }
   return deck;
@@ -65,13 +72,14 @@ const sortCards = (a, b) =>
 
 // ---- create / deal ----------------------------------------------------------
 
-function createGame(rng = Math.random, numPlayers = 4) {
+function createGame(rng = Math.random, numPlayers = 4, decks = 1) {
   numPlayers = Math.max(3, Math.min(7, numPlayers | 0));
-  const handSizes = handSizesFor(numPlayers);
+  decks = decksFor(decks);
+  const handSizes = handSizesFor(numPlayers, decks);
   const state = {
     phase: 'bidding',
-    numPlayers,
-    startCards: startCardsFor(numPlayers),
+    numPlayers, decks,
+    startCards: startCardsFor(numPlayers, decks),
     handSizes,
     totalHands: handSizes.length,
     handIndex: 0,
@@ -99,7 +107,7 @@ function dealHand(state, rng = Math.random) {
   const cards = state.handSizes[state.handIndex];
   state.cardsThisHand = cards;
   state.trump = TRUMP_CYCLE[state.handIndex % TRUMP_CYCLE.length];
-  const deck = shuffle(makeDeck(), rng);
+  const deck = shuffle(makeDeck(state.decks), rng);
   const hands = Array.from({ length: n }, () => []);
   for (let i = 0; i < cards * n; i++) hands[i % n].push(deck[i]);
   for (const h of hands) h.sort(sortCards);
@@ -165,17 +173,19 @@ function legalMoves(state, seat) {
   return inSuit.length ? inSuit : hand.slice();
 }
 
-// Does card x (played later) beat current best y? Trump beats non-trump; else only
-// lead-suit cards win; ties go to the earlier card (first played).
+// Does card x (played LATER) beat current best y? Trump beats non-trump; else only
+// lead-suit cards win. The tiebreak uses `>=`, so when two IDENTICAL cards meet (only
+// possible with two decks) the one played second wins — "the second card is higher".
+// With one deck there are no duplicates, so `>=` behaves exactly like `>`.
 function beats(x, y, leadSuit, trump) {
   const xT = x.suit === trump, yT = y.suit === trump;
   if (xT && !yT) return true;
   if (!xT && yT) return false;
-  if (xT && yT) return x.value > y.value;
+  if (xT && yT) return x.value >= y.value;
   const xL = x.suit === leadSuit, yL = y.suit === leadSuit;
   if (xL && !yL) return true;
   if (!xL && yL) return false;
-  if (xL && yL) return x.value > y.value;
+  if (xL && yL) return x.value >= y.value;
   return false;
 }
 
@@ -270,7 +280,7 @@ function finishGame(state) {
 }
 
 module.exports = {
-  SUITS, RANKS, TRUMP_CYCLE, nextSeat,
+  SUITS, RANKS, TRUMP_CYCLE, nextSeat, decksFor,
   startCardsFor, handSizesFor, makeDeck, shuffle, sortCards,
   createGame, dealHand, bidsPlaced, sumOtherBids, dealerForbidden, bid, startPlay,
   legalMoves, beats, trickWinner, playCard, scoreHand, nextHand, finishGame,

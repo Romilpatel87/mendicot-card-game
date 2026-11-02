@@ -28,11 +28,12 @@ function register(io) {
   const connectedHumans = (room) => room.seats.filter((s) => s && !s.isBot && s.connected).length;
   const allFilled = (room) => room.seats.every((s) => s !== null);
 
-  function newRoom(numPlayers) {
+  function newRoom(numPlayers, decks) {
     numPlayers = Math.max(3, Math.min(7, Number(numPlayers) || 4));
+    decks = G.decksFor(decks);
     let code; do { code = rid(); } while (rooms.has(code));
     const room = {
-      code, numPlayers,
+      code, numPlayers, decks,
       seats: Array.from({ length: numPlayers }, () => null),
       state: null, rematchVotes: new Set(),
       timer: null, bidDeadline: null, createdAt: Date.now(),
@@ -46,7 +47,7 @@ function register(io) {
   // ---- views ----
   function lobbyPayload(room) {
     return {
-      code: room.code, numPlayers: room.numPlayers,
+      code: room.code, numPlayers: room.numPlayers, decks: room.decks,
       seats: room.seats.map((s) => s ? { name: s.name, isBot: s.isBot, connected: s.connected, creator: !!s.creator } : null),
       inProgress: !!room.state,
       started: !!room.state && room.state.phase !== 'finished',
@@ -61,7 +62,7 @@ function register(io) {
     const connected = room.seats.map((s) => !!(s && (s.isBot || s.connected)));
     const hand = seat != null && seat >= 0 ? st.hands[seat] : [];
     return {
-      you: seat, phase: st.phase, numPlayers: st.numPlayers,
+      you: seat, phase: st.phase, numPlayers: st.numPlayers, decks: st.decks,
       names, isBot, connected,
       hand, handCounts: st.hands.map((h) => h.length),
       // hand meta
@@ -137,17 +138,17 @@ function register(io) {
   }
 
   function startGame(room) {
-    room.state = G.createGame(Math.random, room.numPlayers);
+    room.state = G.createGame(Math.random, room.numPlayers, room.decks);
     room.rematchVotes = new Set();
     progress(room);
   }
 
   // ---- socket handlers ----
   ns.on('connection', (socket) => {
-    socket.on('createRoom', ({ name, players } = {}, ack) => {
+    socket.on('createRoom', ({ name, players, decks } = {}, ack) => {
       const nm = (name || '').trim();
       if (!nm) return ack && ack({ ok: false, error: 'Please enter your name.' });
-      const room = newRoom(players);
+      const room = newRoom(players, decks);
       const tk = token();
       room.seats[0] = { token: tk, name: nm.slice(0, 20), isBot: false, socketId: socket.id, connected: true, creator: true };
       socket.join(room.code); index.set(socket.id, { code: room.code, token: tk });
