@@ -93,7 +93,8 @@ for (let seed = 1; seed <= 1500; seed++) {
       for (let s = 0; s < n; s++) {
         const exact = hr.tricksWon[s] === hr.bids[s];
         ok(hr.made[s] === exact, 'made flag');
-        ok(hr.deltas[s] === hr.tricksWon[s] + (exact ? 10 : 0), 'delta formula');
+        // exact-or-nothing: exact → tricks+10, burst → 0
+        ok(hr.deltas[s] === (exact ? hr.tricksWon[s] + 10 : 0), 'delta formula');
       }
       handsPlayed++;
       G.nextHand(st, rng);
@@ -111,13 +112,22 @@ for (let seed = 1; seed <= 1500; seed++) {
   games++;
 }
 
-// ---- trump rotation ----
+// ---- trump rotation: ♠ ♦ ♣ ♥ then NO TRUMP, repeating ----
 {
   const st = G.createGame(mulberry32(42), 4);
-  const seen = [];
-  for (let i = 0; i < 8; i++) seen.push(G.TRUMP_CYCLE[i % 4]);
-  ok(seen.slice(0, 4).join('') === 'SDCH', 'trump cycle order');
   ok(st.trump === 'S', 'first trump spades');
+  const cyc = G.TRUMP_CYCLE;
+  ok(cyc.length === 5, 'cycle length 5');
+  ok(cyc.slice(0, 4).join('') === 'SDCH', 'four suits first');
+  ok(cyc[4] === null, 'fifth is no-trump');
+  // walk the ladder's trump by hand index
+  const trumpFor = (i) => cyc[i % cyc.length];
+  ok(trumpFor(4) === null && trumpFor(9) === null, 'every 5th hand is no-trump');
+  // on a no-trump hand nothing can be trump, so the led suit must win
+  const lead = { suit: 'H', value: 9, id: '9H', uid: '9H' };
+  const other = { suit: 'S', value: 14, id: 'AS', uid: 'AS' }; // off-suit ace
+  ok(G.beats(lead, other, 'H', null) === true || G.beats(other, lead, 'H', null) === false, 'no-trump: off-suit never beats led suit');
+  ok(!G.beats(other, lead, 'H', null), 'no-trump: off-suit ace loses to led nine');
 }
 
 console.log(`✓ ${pass} assertions passed · ${games} games · ${handsPlayed} hands`);

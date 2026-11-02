@@ -10,6 +10,9 @@
   const SUIT = { S: '♠', H: '♥', D: '♦', C: '♣' };
   const SUIT_NAME = { S: 'Spades', H: 'Hearts', D: 'Diamonds', C: 'Clubs' };
   const isRed = (s) => s === 'H' || s === 'D';
+  // trump can be null on a no-trump hand
+  const trumpName = (t) => (t ? `${SUIT[t]} ${SUIT_NAME[t]}` : 'No trump');
+  const trumpGlyph = (t) => (t ? SUIT[t] : 'NT');
 
   // keep free hosts awake during play
   setInterval(() => { if (me.code) fetch('/healthz').catch(() => {}); }, 4 * 60 * 1000);
@@ -92,14 +95,15 @@
     <p>Each hand you <b>predict</b> how many tricks you'll win. Hit it <b>exactly</b> for a bonus — it's every player for themselves.</p>
     <h4>The deal</h4>
     <ul><li>Cards shrink by one each hand down to a single card, then grow back up.</li>
-    <li>Trump rotates every hand: ♠ → ♦ → ♣ → ♥ …</li></ul>
+    <li>Trump rotates every hand: ♠ → ♦ → ♣ → ♥ → <b>no trump</b>, then repeats.</li></ul>
     <h4>Bidding</h4>
     <ul><li>Say how many tricks you'll take (0 is fine). The dealer bids last and can't make the bids total the number of tricks — someone always misses.</li></ul>
     <h4>Play</h4>
     <ul><li>Follow suit if you can; highest trump wins, else the highest card of the led suit.</li>
     <li><b>Double deck:</b> every card exists twice — if an identical card is played after yours, the <b>second one wins</b>.</li></ul>
     <h4>Scoring</h4>
-    <ul><li><b>1 point</b> per trick won, <b>+10</b> if you took exactly your bid.</li>
+    <ul><li>Take <b>exactly</b> your bid → score <b>bid + 10</b>.</li>
+    <li>Over or under by any amount (<b>burst</b>) → <b>0</b> for the hand.</li>
     <li>Highest total after the final hand wins.</li></ul>`;
 
   // ======================================================================
@@ -188,8 +192,9 @@
 
   function renderStatus(v, completed) {
     const tb = $('trumpBadge');
-    if (v.trump) { tb.classList.add('show'); tb.innerHTML = `Trump · <span style="color:${isRed(v.trump) ? '#ffb3a0' : '#fff'}">${SUIT[v.trump]} ${SUIT_NAME[v.trump]}</span>`; }
-    else { tb.classList.remove('show'); tb.textContent = ''; }
+    tb.classList.add('show');
+    if (v.trump) tb.innerHTML = `Trump · <span style="color:${isRed(v.trump) ? '#ffb3a0' : '#fff'}">${SUIT[v.trump]} ${SUIT_NAME[v.trump]}</span>`;
+    else tb.innerHTML = `<span style="color:#ffd79a">No trump this hand</span>`;
     const sl = $('statusLine');
     if (completed) { sl.textContent = `${v.names[completed.winner]} takes the trick`; return; }
     if (v.phase === 'bidding') sl.textContent = v.bidTurn === me.seat ? 'Your turn — predict your tricks' : `${v.names[v.bidTurn]} is bidding…`;
@@ -215,7 +220,7 @@
     sb.innerHTML =
       `<h4>Hand ${v.handNumber} / ${v.totalHands}</h4>` +
       `<div class="sb-row"><span class="sb-label">Cards</span><span>${v.cardsThisHand}</span></div>` +
-      `<div class="sb-row"><span class="sb-label">Trump</span><span class="${isRed(v.trump) ? 'red' : ''}">${SUIT[v.trump]} ${SUIT_NAME[v.trump]}</span></div>` +
+      `<div class="sb-row"><span class="sb-label">Trump</span><span class="${v.trump && isRed(v.trump) ? 'red' : ''}">${trumpName(v.trump)}</span></div>` +
       (v.phase === 'bidding'
         ? `<div class="sb-row"><span class="sb-label">Bids so far</span><span>${totalBid} / ${v.cardsThisHand}</span></div>`
         : `<div class="sb-row"><span class="sb-label">Tricks</span><span>${v.trickNumber} / ${v.cardsThisHand}</span></div>`) +
@@ -223,7 +228,8 @@
   }
 
   function renderMatchStrip(v) {
-    $('matchStrip').innerHTML = `Hand <b>${v.handNumber}</b>/${v.totalHands} · ${v.cardsThisHand} cards · Trump <span class="${isRed(v.trump) ? 'tr' : ''}">${SUIT[v.trump]}</span>${v.decks === 2 ? ' · 2 decks' : ''}`;
+    const tr = v.trump ? `Trump <span class="${isRed(v.trump) ? 'tr' : ''}">${SUIT[v.trump]}</span>` : '<b>No trump</b>';
+    $('matchStrip').innerHTML = `Hand <b>${v.handNumber}</b>/${v.totalHands} · ${v.cardsThisHand} cards · ${tr}${v.decks === 2 ? ' · 2 decks' : ''}`;
   }
 
   // ---- bid panel ----
@@ -268,15 +274,16 @@
     let rows = '';
     for (const s of order) {
       const made = r.made[s];
+      const delta = made ? '✓ +' + r.deltas[s] : (r.tricksWon[s] > r.bids[s] ? 'burst · 0' : 'short · 0');
       rows += `<div class="hp-row ${s === me.seat ? 'you' : ''}">` +
         `<span class="hp-name">${escapeHtml(v.names[s])}${s === me.seat ? ' (you)' : ''}</span>` +
         `<span class="hp-mid">bid ${r.bids[s]} · took ${r.tricksWon[s]}</span>` +
-        `<span class="hp-delta ${made ? 'good' : 'bad'}">${made ? '✓ +' + r.deltas[s] : '+' + r.deltas[s]}</span>` +
+        `<span class="hp-delta ${made ? 'good' : 'bad'}">${delta}</span>` +
         `<span class="hp-tot">${r.scores[s]}</span></div>`;
     }
     p.innerHTML =
       `<div class="panel-title">Hand ${r.handNumber} done</div>` +
-      `<div class="panel-sub">Exact bids score <b>+10</b> and are marked ✓. Next hand dealing…</div>` +
+      `<div class="panel-sub">Hit your bid exactly for <b>bid + 10</b>; a burst scores <b>0</b>. Next hand dealing…</div>` +
       `<div class="hp-list">${rows}</div>`;
   }
 

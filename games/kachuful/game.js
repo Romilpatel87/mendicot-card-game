@@ -3,19 +3,23 @@
 // A SOLO (no partnerships) trick-PREDICTION game played over a ladder of hands.
 //   • The deal shrinks by one card each hand down to a single-card hand, then grows
 //     back up to the start size — so a start of S gives 2S-1 hands.
-//   • The trump suit rotates every hand: Spades → Diamonds → Clubs → Hearts → …
+//   • The trump suit rotates every hand: Spades → Diamonds → Clubs → Hearts → NO TRUMP,
+//     then the cycle repeats.
 //   • Each hand: every player predicts (bids) how many tricks they will take. The
 //     dealer bids last and may NOT bid the value that would make the bids total the
 //     number of tricks ("screw the dealer"), so someone is always off.
 //   • Play is normal trick-taking (follow suit; highest trump, else highest lead suit).
-//   • Scoring (gamerules.com "most common" method): 1 point per trick won, plus a
-//     10-point bonus for taking EXACTLY your bid. Scores accumulate across every hand;
-//     highest total after the last hand wins.
+//     On a no-trump hand nothing beats the led suit except a higher card of it.
+//   • Scoring (exact-or-nothing): take EXACTLY your bid and score bid + 10; miss it in
+//     either direction ("burst") and you score 0 for the hand. Scores accumulate across
+//     every hand; highest total after the last hand wins.
 //
 // Phases: bidding → playing → (handOver → bidding)* → finished.
 
 const SUITS = ['S', 'H', 'D', 'C'];               // Spades, Hearts, Diamonds, Clubs
-const TRUMP_CYCLE = ['S', 'D', 'C', 'H'];         // rotates each hand, per the rules
+// Trump rotates each hand; after all four suits comes a NO-TRUMP hand (null), then the
+// cycle repeats: ♠ → ♦ → ♣ → ♥ → (no trump) → ♠ → …
+const TRUMP_CYCLE = ['S', 'D', 'C', 'H', null];
 const RANKS = [
   { label: '2', value: 2 }, { label: '3', value: 3 }, { label: '4', value: 4 },
   { label: '5', value: 5 }, { label: '6', value: 6 }, { label: '7', value: 7 },
@@ -237,7 +241,8 @@ function scoreHand(state) {
   for (let s = 0; s < n; s++) {
     const exact = state.tricksWon[s] === state.bids[s];
     made[s] = exact;
-    deltas[s] = state.tricksWon[s] + (exact ? 10 : 0); // 1 per trick + 10 bonus if exact
+    // Exact bid scores tricks + 10 (= bid + 10); any miss ("burst") scores nothing.
+    deltas[s] = exact ? state.tricksWon[s] + 10 : 0;
     state.scores[s] += deltas[s];
   }
   state.handResult = {
