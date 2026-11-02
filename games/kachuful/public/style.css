@@ -1,0 +1,161 @@
+/* style.css (Kachuful) — a "PHOOL" (flower-garden) theme: a warm plum/wine table with
+   marigold-gold and rose accents and a blossom motif, deliberately distinct from
+   Mendicot's green felt and Kali Tiri's indigo folk mat. Loads after the shared Mendicot
+   stylesheet and overrides its surfaces; the card + positioning logic is reused so the
+   cards stay rectangular and readable. */
+
+:root {
+  --gold: #f2b134;           /* marigold */
+  --gold-dim: #c98a1e;
+  --gold-soft: rgba(242,177,52,0.20);
+  --cream: #fbeede;
+  --cream-2: #f1e2c8;
+  --ink: #3a1428;
+  --red: #c2304f;            /* rose-red suits */
+  --rose: #e8608a;
+  --plum: #4a123a;
+  --plum-2: #320a28;
+  --shadow: 0 18px 40px rgba(0,0,0,0.5);
+}
+
+/* ---- plum garden background with a faint blossom bloom ---- */
+body {
+  color: var(--cream);
+  background-color: #2a0820;
+  background-image:
+    radial-gradient(40% 30% at 18% 14%, rgba(232,96,138,0.14) 0%, transparent 60%),
+    radial-gradient(42% 32% at 84% 82%, rgba(242,177,52,0.12) 0%, transparent 60%),
+    radial-gradient(120% 120% at 50% -10%, #4a123a 0%, #35092a 55%, #22051a 100%);
+}
+.grain { opacity: 0.045; }
+
+/* ---- heading font ---- */
+h1, h2, .brand, .crest, .result-crest, .code-chip, .panel-title { font-family: 'Fraunces', 'Marcellus', serif; letter-spacing: 0.01em; }
+.home-card h1 { font-size: 46px; line-height: 1.04; }
+.crest { letter-spacing: 0.28em; font-size: 20px; }
+.field-note { font-size: 12px; color: rgba(251,238,222,0.62); margin-top: 8px; line-height: 1.4; }
+
+/* ---- play area: plum mat in a marigold + rose blossom frame ---- */
+.felt {
+  background:
+    radial-gradient(60% 45% at 50% 42%, #5a1646 0%, #431038 60%, #2d0823 100%);
+  border: 3px solid var(--gold-dim);
+  box-shadow: inset 0 0 0 3px rgba(232,96,138,0.4), inset 0 0 60px rgba(0,0,0,0.5), var(--shadow);
+}
+.felt::after { inset: 14px; border: 1px dashed rgba(242,177,52,0.45); border-radius: 16px; }
+
+/* ---- panels ---- */
+.home-card, .lobby-card, .overlay-card {
+  background: linear-gradient(180deg, rgba(74,18,58,0.96), rgba(40,8,30,0.98));
+  border: 1px solid var(--gold); box-shadow: 0 0 0 3px rgba(232,96,138,0.4), var(--shadow);
+}
+.mode-opt.active { border-color: var(--gold); background: rgba(242,177,52,0.16); box-shadow: 0 0 0 1px var(--gold); }
+.player.turn { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold), 0 0 22px var(--gold-soft); background: rgba(242,177,52,0.12); }
+.badge-you { background: var(--gold) !important; color: #2a0820 !important; }
+.badge-dealer { font-size: 9px; background: rgba(232,96,138,0.28); color: #ffd9e4; border-radius: 4px; padding: 1px 5px; letter-spacing: 0.06em; margin-left: 4px; }
+
+/* ====================================================================== */
+/*  CARDS — readable rectangular faces; trump cards get a marigold frame.  */
+/* ====================================================================== */
+.card {
+  background: linear-gradient(160deg, #fdf4e3 0%, #f2e3c6 100%);
+  box-shadow: inset 0 0 0 1px rgba(194,48,79,0.3), 0 4px 10px rgba(0,0,0,0.42);
+}
+.card.red { color: var(--red); }
+.card.trump { box-shadow: inset 0 0 0 2px var(--gold), 0 4px 10px rgba(0,0,0,0.42); }
+.card.trump::after {
+  content: '❀'; position: absolute; top: -7px; right: -6px; font-size: 10px; line-height: 1;
+  color: #2a0820; background: var(--gold); border-radius: 999px; padding: 1px 3px; font-weight: 700;
+}
+.hand .card.selected { box-shadow: inset 0 0 0 2px var(--rose), 0 10px 18px rgba(0,0,0,0.5); transform: translateY(-22px); }
+.tcard.win { filter: drop-shadow(0 0 14px var(--gold)); }
+
+/* face-down piles — rose woven backs */
+.cardback {
+  background: repeating-linear-gradient(45deg, #b83a63 0 3px, #8f2b4c 3px 6px);
+  border: 1px solid rgba(242,177,52,0.55);
+}
+
+/* ====================================================================== */
+/*  BID PANEL + BETWEEN-HANDS PANEL (center overlays)                      */
+/* ====================================================================== */
+.bid-panel, .hand-panel {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 6;
+  width: min(92vw, 440px); text-align: center;
+  background: linear-gradient(180deg, rgba(74,18,58,0.97), rgba(40,8,30,0.98));
+  border: 1px solid var(--gold); border-radius: 18px; padding: 18px 20px;
+  box-shadow: 0 0 0 3px rgba(232,96,138,0.4), var(--shadow);
+}
+.bid-panel[hidden], .hand-panel[hidden] { display: none; }
+.panel-title { color: var(--gold); font-size: 20px; margin-bottom: 4px; }
+.panel-sub { font-size: 13px; color: rgba(251,238,222,0.82); margin-bottom: 14px; }
+.panel-sub b { color: var(--cream); }
+.panel-note { font-size: 12px; color: var(--rose); margin-top: 10px; }
+
+.bid-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.bid-btn {
+  font-family: 'Jost', sans-serif; font-weight: 600; font-size: 16px; cursor: pointer; color: #2a0820;
+  background: linear-gradient(180deg, var(--gold), var(--gold-dim)); border: none; border-radius: 12px;
+  width: 46px; height: 46px; box-shadow: 0 6px 16px rgba(242,177,52,0.26); transition: transform .12s;
+}
+.bid-btn:hover:not(:disabled) { transform: translateY(-2px); }
+.bid-btn.forbidden, .bid-btn:disabled { opacity: 0.3; cursor: not-allowed; background: rgba(255,255,255,0.08); color: var(--cream); box-shadow: none; }
+.bid-timer { margin-top: 14px; font-size: 13px; color: var(--gold); letter-spacing: 0.06em; }
+.bid-timer .bar { height: 4px; border-radius: 4px; background: rgba(255,255,255,0.12); margin-top: 6px; overflow: hidden; }
+.bid-timer .bar > i { display: block; height: 100%; background: var(--rose); transition: width .25s linear; }
+
+/* between-hands result list */
+.hp-list { display: flex; flex-direction: column; gap: 4px; text-align: left; margin-top: 4px; max-height: 44vh; overflow-y: auto; }
+.hp-row { display: grid; grid-template-columns: 1.4fr 1.5fr auto auto; align-items: center; gap: 8px;
+  padding: 7px 10px; border-radius: 10px; background: rgba(0,0,0,0.22); font-size: 13px; }
+.hp-row.you { background: rgba(242,177,52,0.14); box-shadow: inset 0 0 0 1px rgba(242,177,52,0.4); }
+.hp-name { font-weight: 600; }
+.hp-mid { color: rgba(251,238,222,0.72); font-size: 12px; }
+.hp-delta { font-weight: 700; text-align: right; }
+.hp-delta.good { color: #8fe3b0; }
+.hp-delta.bad { color: rgba(251,238,222,0.5); }
+.hp-tot { font-family: 'Fraunces', serif; font-size: 16px; text-align: right; min-width: 30px; color: var(--gold); }
+
+/* ====================================================================== */
+/*  SEAT CHIPS + SCOREBOARD                                                */
+/* ====================================================================== */
+.seat-chip {
+  margin-top: 4px; font-size: 11px; letter-spacing: 0.03em; color: var(--cream);
+  background: rgba(0,0,0,0.34); border: 1px solid rgba(242,177,52,0.4); border-radius: 999px; padding: 2px 9px; display: inline-block;
+}
+.seat-chip.set { border-color: var(--gold); color: var(--gold); }
+.seat-chip.exact { border-color: #8fe3b0; color: #8fe3b0; background: rgba(143,227,176,0.12); }
+.seat-chip.over { border-color: var(--rose); color: #ffbcd0; }
+.seat-chip.under { color: rgba(251,238,222,0.7); }
+
+.scoreboard { background: rgba(40,8,30,0.6); border: 1px solid rgba(242,177,52,0.3); }
+.scoreboard h4 { color: var(--gold); }
+.scoreboard .red { color: var(--rose); }
+.sb-scorelist { margin-top: 4px; }
+.sb-scorelist .row { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 6px; font-size: 12px; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.sb-scorelist .row:last-child { border-bottom: none; }
+.sb-scorelist .row.you .nm { color: var(--gold); font-weight: 600; }
+.sb-scorelist .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sb-scorelist .sb-bid { font-size: 11px; color: rgba(251,238,222,0.7); }
+.sb-scorelist .sb-bid.exact { color: #8fe3b0; }
+.sb-scorelist .sb-bid.dim { opacity: 0.5; }
+.sb-scorelist .tot { font-family: 'Fraunces', serif; font-size: 14px; color: var(--gold); min-width: 22px; text-align: right; }
+
+/* ---- final result table ---- */
+.final-table { display: flex; flex-direction: column; gap: 6px; margin: 4px 0 18px; }
+.final-row { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px;
+  padding: 8px 12px; border-radius: 10px; background: rgba(0,0,0,0.24); text-align: left; }
+.final-row.win { background: rgba(242,177,52,0.16); box-shadow: inset 0 0 0 1px var(--gold); }
+.final-row.you .fr-name { font-weight: 700; }
+.fr-rank { font-family: 'Fraunces', serif; color: var(--gold); font-size: 16px; width: 20px; text-align: center; }
+.fr-name { font-size: 15px; }
+.fr-score { font-family: 'Fraunces', serif; font-size: 20px; color: var(--gold); }
+.overlay-card h2.win { color: var(--gold); }
+.overlay-card h2.lose { color: var(--rose); }
+
+/* ---- mobile ---- (card sizing inherited from the Mendicot stylesheet) */
+@media (max-width: 680px) {
+  .bid-btn { width: 42px; height: 42px; font-size: 15px; }
+  .hp-row { grid-template-columns: 1.2fr auto auto; }
+  .hp-mid { display: none; }
+}
